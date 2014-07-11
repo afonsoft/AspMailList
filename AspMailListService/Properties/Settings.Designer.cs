@@ -26,8 +26,9 @@ namespace AspMailList.Service.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=mssql.afonsoft.com.br;Initial Catalog=afonsoftcombr_db;User ID=afonso" +
-            "ftcombr")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=mssql.afonsoft.com.br;Initial Catalog=afonsoftcombr_db;Persist Securi" +
+            "ty Info=True;User ID=afonsoftcombr;Password=r5q9y6t2;Connection Lifetime=360000;" +
+            "Connect Timeout=360000;")]
         public string afonsoftcombr_dbConnectionString {
             get {
                 return ((string)(this["afonsoftcombr_dbConnectionString"]));
