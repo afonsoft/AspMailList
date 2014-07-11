@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="dbMalaDireta">
+  <DataContextMoniker Name="/dbMalaDiretaDataContext" />
+  <nestedChildShapes>
+    <classShape Id="f9ad9d7b-7b7c-4d87-b540-f44690420368" absoluteBounds="3.25, 3, 2, 1.5785953776041666">
+      <DataClassMoniker Name="/dbMalaDiretaDataContext/Mala_Direta" />
+      <nestedChildShapes>
+        <elementListCompartment Id="e68b8d26-47c8-410f-af48-5150e4af0748" absoluteBounds="3.2650000000000006, 3.46, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="b3542fb7-9b3c-4650-b164-77ec0872952f" absoluteBounds="0.5, 4.75, 2, 1.5785953776041666">
+      <DataClassMoniker Name="/dbMalaDiretaDataContext/Mala_Direta_Campanha_Unsubscribe" />
+      <nestedChildShapes>
+        <elementListCompartment Id="2b9eb9ff-170b-4291-8035-17723c818240" absoluteBounds="0.51500000000000012, 5.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="8bda34f2-9114-4187-9932-721ebcbd9e37" absoluteBounds="0.5, 0.5, 2, 3.5016097005208326">
+      <DataClassMoniker Name="/dbMalaDiretaDataContext/Mala_Direta_Campanha" />
+      <nestedChildShapes>
+        <elementListCompartment Id="452dd9a7-30dc-405a-8d37-8c27581bfb0a" absoluteBounds="0.515, 0.96000000000000085, 1.9700000000000002, 2.941609700520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="e066715e-d955-4721-9fa6-b5f709886a2d" absoluteBounds="3.25, 0.5, 2, 1.5785953776041666">
+      <DataClassMoniker Name="/dbMalaDiretaDataContext/Mala_Direta_Campanha_Enviado" />
+      <nestedChildShapes>
+        <elementListCompartment Id="be7accb7-29c1-48b2-937e-c6c515ebcdd6" absoluteBounds="3.265, 0.96, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(4.25 : 4.57859537760417); (4.25 : 5.53929768880208); (2.5 : 5.53929768880208)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/dbMalaDiretaDataContext/Mala_Direta/Mala_Direta_Mala_Direta_Campanha_Unsubscribe" />
+      <nodes>
+        <classShapeMoniker Id="f9ad9d7b-7b7c-4d87-b540-f44690420368" />
+        <classShapeMoniker Id="b3542fb7-9b3c-4650-b164-77ec0872952f" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(1.5 : 4.00160970052083); (1.5 : 4.75)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/dbMalaDiretaDataContext/Mala_Direta_Campanha/Mala_Direta_Campanha_Mala_Direta_Campanha_Unsubscribe" />
+      <nodes>
+        <classShapeMoniker Id="8bda34f2-9114-4187-9932-721ebcbd9e37" />
+        <classShapeMoniker Id="b3542fb7-9b3c-4650-b164-77ec0872952f" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(4.25 : 3); (4.25 : 2.07859537760417)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/dbMalaDiretaDataContext/Mala_Direta/Mala_Direta_Mala_Direta_Campanha_Enviado" />
+      <nodes>
+        <classShapeMoniker Id="f9ad9d7b-7b7c-4d87-b540-f44690420368" />
+        <classShapeMoniker Id="e066715e-d955-4721-9fa6-b5f709886a2d" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(2.5 : 1.28929768880208); (3.25 : 1.28929768880208)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/dbMalaDiretaDataContext/Mala_Direta_Campanha/Mala_Direta_Campanha_Mala_Direta_Campanha_Enviado" />
+      <nodes>
+        <classShapeMoniker Id="8bda34f2-9114-4187-9932-721ebcbd9e37" />
+        <classShapeMoniker Id="e066715e-d955-4721-9fa6-b5f709886a2d" />
+      </nodes>
+    </associationConnector>
+  </nestedChildShapes>
+</ordesignerObjectsDiagram>
