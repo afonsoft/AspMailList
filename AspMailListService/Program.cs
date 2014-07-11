@@ -4,6 +4,7 @@ using OpenPop.Pop3;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -12,10 +13,22 @@ namespace AspMailList.Service
 {
     class Program
     {
+        private static object lockObject = new object();
+        public static void WriteLine(string value)
+        {
+            lock (lockObject)  // all other threads will wait for y
+            {
+                Console.WriteLine(value);
+                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                {
+                    lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
+                    lockStreamWriter.Write(Environment.NewLine);
+                }
+            }
+        }
 
         public static List<Thread >Threads { get; set; }
         
-
         private static List<string> _emails = null;
         public static List<string> Emails
         {
@@ -31,13 +44,13 @@ namespace AspMailList.Service
 
         static void OnProcessExit(object sender, EventArgs e)
         {
-            Console.WriteLine("Finalizando AspMailList");
+            WriteLine("Finalizando AspMailList");
             isRunnig = false;
             foreach (Thread t in Threads)
             {
                 try
                 {
-                    Console.WriteLine("Finalizando as thread " + t.Name);
+                    WriteLine("Finalizando as thread " + t.Name);
                     t.Join();
                     t.Abort();
                 }
@@ -49,27 +62,23 @@ namespace AspMailList.Service
         {
             try
             {
-                Console.WriteLine("Iniciando AspMailList");
-                Console.WriteLine("Versão Aplicação: " + FileVersionInfo.GetVersionInfo(typeof(Program).Assembly.Location).FileVersion + " - " + typeof(Program).Assembly.GetName().Version.ToString());
-                Console.WriteLine("Versão biblioteca: " + CoreAssembly.getFileVersion + " - " + CoreAssembly.getVersion);
+                WriteLine("Iniciando AspMailList");
+                WriteLine("Versão Aplicação: " + FileVersionInfo.GetVersionInfo(typeof(Program).Assembly.Location).FileVersion + " - " + typeof(Program).Assembly.GetName().Version.ToString());
+                WriteLine("Versão biblioteca: " + CoreAssembly.getFileVersion + " - " + CoreAssembly.getVersion);
                 AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit); 
-                Console.WriteLine("Recuperando a lista de Campanhas.");
+                WriteLine("Recuperando a lista de Campanhas.");
                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                 {
-                    db.CommandTimeout = db.Connection.ConnectionTimeout;
-                    db.DeferredLoadingEnabled = false;
-                    db.ObjectTrackingEnabled = false;
-
                     var listCampanha = (from c in db.Mala_Direta_Campanhas
                                         where c.Enabled == true
                                         select c).ToList();
 
-                    Console.WriteLine("Total de Campanhas: " + listCampanha.Count);
-                    Console.WriteLine("Lendo database...");
-                    Emails = (from m in db.Mala_Diretas
-                              select m.email).ToList();
-                    Console.WriteLine("Localizado " + Emails.Count() + " registro.");
-                    Console.WriteLine("Iniciando as Threads das campanhas");
+                    WriteLine("Total de Campanhas: " + listCampanha.Count);
+                    WriteLine("Lendo database...");
+                    //Emails = (from m in db.Mala_Diretas
+                    //          select m.email).ToList();
+                    WriteLine("Localizado " + Emails.Count() + " registro.");
+                    WriteLine("Iniciando as Threads das campanhas");
                     Threads = new List<Thread>();
                     foreach (var campanha in listCampanha)
                     {
@@ -108,10 +117,10 @@ namespace AspMailList.Service
             {
                 Console.Clear();
                 isRunnig = false;
-                Console.WriteLine("Ocorreu um erro!");
-                Console.WriteLine("Erro: " + ex.Message);
-                Console.WriteLine("StackTrace: " + ex.StackTrace);
-                Console.WriteLine("Precione um tecla para sair.");
+                WriteLine("Ocorreu um erro!");
+                WriteLine("Erro: " + ex.Message);
+                WriteLine("StackTrace: " + ex.StackTrace);
+                WriteLine("Precione um tecla para sair.");
                 Console.ReadKey();
             }
         }
@@ -124,13 +133,13 @@ namespace AspMailList.Service
                 try
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-                    Console.WriteLine("Iniciando (ExecutarCampanhaHelps): " + threadCampanha.Campanha.DisplayName);
+                    WriteLine("Iniciando (ExecutarCampanhaHelps): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarHelps(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName);
                     Thread.Sleep(60000); //1 Minutos
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("(ExecutarCampanhaHelps) Erros: " + ex.Message);
+                    WriteLine("(ExecutarCampanhaHelps) Erros: " + ex.Message);
                     Thread.Sleep(60000 * 30); //30 Minutos
                 }
             }
@@ -144,13 +153,13 @@ namespace AspMailList.Service
                 try
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-                    Console.WriteLine("Iniciando (ExecutarCampanhaErros): " + threadCampanha.Campanha.DisplayName);
+                    WriteLine("Iniciando (ExecutarCampanhaErros): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarErros(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword);
                     Thread.Sleep(60000 * 10); //10 Minutos
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("(ExecutarCampanhaErros) Erros: " + ex.Message);
+                    WriteLine("(ExecutarCampanhaErros) Erros: " + ex.Message);
                     Thread.Sleep(60000 * 60); //60 Minutos
                 }
             }
@@ -163,13 +172,13 @@ namespace AspMailList.Service
                 try
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-                    Console.WriteLine("Iniciando (ExecutarCampanhaUnsubscribeAndSubscribe): " + threadCampanha.Campanha.DisplayName);
+                    WriteLine("Iniciando (ExecutarCampanhaUnsubscribeAndSubscribe): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarUnsubscribeAndSubscribe(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName);
                     Thread.Sleep(60000); //1 Minutos
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("(ExecutarCampanhaUnsubscribeAndSubscribe) Erros: " + ex.Message);
+                    WriteLine("(ExecutarCampanhaUnsubscribeAndSubscribe) Erros: " + ex.Message);
                     Thread.Sleep(60000 * 30); //30 Minutos
                 }
             }
@@ -177,16 +186,30 @@ namespace AspMailList.Service
     }
     public class myThreadCampanha
     {
+        private static object lockObject = new object();
+        public static void WriteLine(string value)
+        {
+            lock (lockObject)  // all other threads will wait for y
+            {
+                Console.WriteLine(value);
+                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                {
+                    lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
+                    lockStreamWriter.Write(Environment.NewLine);
+                }
+            }
+        }
+
         public Mala_Direta_Campanha Campanha { get; set; }
         private myThreadCampanha() { }
         public myThreadCampanha(Mala_Direta_Campanha campamha) { Campanha = campamha; }
         public void ProcessarErros(string host, int port, bool ssl, string user, string pass)
         {
+            int count = 0;
             AspMailList.library.Pop3 pop = new AspMailList.library.Pop3();
             using (Pop3Client client = pop.pop3Client(host, port, ssl, user, pass))
             {
                 List<Message> lst = pop.FetchAllMessages(client);
-                int count = 0;
                 foreach (Message msg in lst)
                 {
                     string Subject = msg.Headers.Subject.ToLower().Trim();
@@ -225,7 +248,7 @@ namespace AspMailList.Service
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
                     }
                 }
-                Console.WriteLine("Removido " + count + " e-mails com erros.");
+                WriteLine("Removido " + count + " e-mails com erros.");
             }
         }
         public void ProcessarHelps(string host, int popPort, int smtpPort, bool ssl, string user, string pass, string displayName)
@@ -240,7 +263,7 @@ namespace AspMailList.Service
                     if (Subject.IndexOf("help") >= 0)
                     {
                         string from = msg.Headers.From.Address.ToString().ToLower().Trim();
-                        Console.WriteLine("Enviando e-mail de help para " + from);
+                        WriteLine("Enviando e-mail de help para " + from);
                         AspMailList.library.Smtp smtp = new library.Smtp();
                         smtp.Subject = "Informações sobre a subscrição";
                         smtp.To = from;
@@ -271,11 +294,11 @@ namespace AspMailList.Service
                     if (Subject.IndexOf("subscribe") >= 0 || Subject.IndexOf("unsubscribe") >= 0)
                     {
                         bool subscribe = Subject.IndexOf("unsubscribe") < 0;
-                        string from = msg.Headers.From.Address.ToString().ToLower().Trim();
-                        Console.WriteLine("Enviando e-mail de help para " + from + " com objetivo " + Subject);
+                        string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
+                        WriteLine("Enviando e-mail de help para " + sfrom + " com objetivo " + Subject);
                         AspMailList.library.Smtp smtp = new library.Smtp();
                         smtp.Subject = "Informações sobre a subscrição";
-                        smtp.To = from;
+                        smtp.To = sfrom;
                         smtp.From = user;
                         smtp.Password = pass;
                         smtp.User = user;
@@ -290,9 +313,20 @@ namespace AspMailList.Service
                             using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                             {
                                 Mala_Direta mala = new Mala_Direta();
-                                mala.email = from;
+                                mala.email = sfrom;
                                 mala.dtCadastro = DateTime.Now;
                                 db.Mala_Diretas.InsertOnSubmit(mala);
+                                db.SubmitChanges();
+                            }
+                        }
+                        else
+                        {
+                            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                            {
+                                var optdelete = (from m in db.Mala_Diretas
+                                                 where m.email == sfrom
+                                                 select m);
+                                db.Mala_Diretas.DeleteAllOnSubmit(optdelete);
                                 db.SubmitChanges();
                             }
                         }
