@@ -156,7 +156,7 @@ namespace AspMailList.Service
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
                     WriteLine("Iniciando (ExecutarCampanhaHelps): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarHelps(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName);
-                    Thread.Sleep(60000); //1 Minutos
+                    Thread.Sleep(60010); //1 Minutos
                 }
                 catch (Exception ex)
                 {
@@ -179,7 +179,7 @@ namespace AspMailList.Service
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
                     WriteLine("Iniciando (ExecutarCampanhaErros): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarErros(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword);
-                    Thread.Sleep(60000 * 10); //10 Minutos
+                    Thread.Sleep(60100 * 10); //10 Minutos
                 }
                 catch (Exception ex)
                 {
@@ -201,7 +201,7 @@ namespace AspMailList.Service
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
                     WriteLine("Iniciando (ExecutarCampanhaUnsubscribeAndSubscribe): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarUnsubscribeAndSubscribe(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName);
-                    Thread.Sleep(60000); //1 Minutos
+                    Thread.Sleep(60005); //1 Minutos
                 }
                 catch (Exception ex)
                 {
@@ -398,9 +398,9 @@ namespace AspMailList.Service
             sb.AppendLine("<br>");
             sb.AppendLine("<b>Informações sobre a lista.</b><br>");
             sb.AppendLine("<br>");
-            sb.AppendLine("<br>List-Help: " + mail + "?subject=Help");
-            sb.AppendLine("<br>List-Unsubscribe: " + mail + "?subject=Unsubscribe");
-            sb.AppendLine("<br>List-Subscribe: " + mail + "?subject=Subscribe");
+            sb.AppendLine("<br>List-Help: <a href='mailto:" + mail + "?subject=Help'>" + mail + "?subject=Help</a>");
+            sb.AppendLine("<br>List-Unsubscribe: <a href='mailto:" + mail + "?subject=Unsubscribe'>" + mail + "?subject=Unsubscribe</a>");
+            sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + mail + "?subject=Subscribe'>" + mail + "?subject=Subscribe</a>");
             sb.AppendLine("<br>");
             sb.AppendLine("<br>Obrigado.<br>");
             sb.AppendLine(displayName);
@@ -419,11 +419,11 @@ namespace AspMailList.Service
             else
                 sb.AppendLine("<br>Você acabou de sair no grupo da lista.");
             sb.AppendLine("<br>");
-            sb.AppendLine("<br>List-Help: " + mail + "?subject=Help");
+            sb.AppendLine("<br>List-Help: <a href='mailto:" + mail + "?subject=Help'>" + mail + "?subject=Help</a>");
             if (Subscribe)
-                sb.AppendLine("<br>List-Unsubscribe: " + mail + "?subject=Unsubscribe");
+                sb.AppendLine("<br>List-Unsubscribe: <a href='mailto:" + mail + "?subject=Unsubscribe'>" + mail + "?subject=Unsubscribe</a>");
             else
-                sb.AppendLine("<br>List-Subscribe: " + mail + "?subject=Subscribe");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + mail + "?subject=Subscribe'>" + mail + "?subject=Subscribe</a>");
             sb.AppendLine("<br>");
             sb.AppendLine("<br>Obrigado.<br>");
             sb.AppendLine(displayName);
