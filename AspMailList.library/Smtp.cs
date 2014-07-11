@@ -200,12 +200,12 @@ namespace AspMailList.library
                 UseCredentials = true;
                 if (string.IsNullOrEmpty(Password) || string.IsNullOrEmpty(User))
                     UseCredentials = false;
-
+#if !MONO
                 if (UseCredentials)
                     smtp.UseDefaultCredentials = false;
                 else
                     smtp.UseDefaultCredentials = true;
-
+#endif
                 if (UseCredentials)
                     smtp.Credentials = Credential;
 

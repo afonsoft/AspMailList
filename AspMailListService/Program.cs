@@ -26,7 +26,30 @@ namespace AspMailList.Service
                 }
             }
         }
-
+        public static void WriteLine(string value, Exception ex)
+        {
+            lock (lockObject)  // all other threads will wait for y
+            {
+                Console.WriteLine(value);
+                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                {
+                    lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
+                    lockStreamWriter.Write(Environment.NewLine);
+                    if (ex != null)
+                    {
+                        lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": Erro: " + ex.Message);
+                        lockStreamWriter.Write(Environment.NewLine);
+                        lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": StackTrace: " + ex.StackTrace);
+                        lockStreamWriter.Write(Environment.NewLine);
+                        if (ex.InnerException != null)
+                        {
+                            lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": InnerException: " + ex.InnerException.Message);
+                            lockStreamWriter.Write(Environment.NewLine);
+                        }
+                    }
+                }
+            }
+        }
         public static List<Thread >Threads { get; set; }
         
         private static List<string> _emails = null;
@@ -117,9 +140,7 @@ namespace AspMailList.Service
             {
                 Console.Clear();
                 isRunnig = false;
-                WriteLine("Ocorreu um erro!");
-                WriteLine("Erro: " + ex.Message);
-                WriteLine("StackTrace: " + ex.StackTrace);
+                WriteLine("Ocorreu um erro!", ex);
                 WriteLine("Precione um tecla para sair.");
                 Console.ReadKey();
             }
@@ -139,8 +160,11 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(ExecutarCampanhaHelps) Erros: " + ex.Message);
-                    Thread.Sleep(60000 * 30); //30 Minutos
+                    WriteLine("(ExecutarCampanhaHelps) Erros: " + ex.Message, ex);
+                    if (ex.Message.IndexOf("Server not found") >= 0)
+                        Thread.Sleep(60000); //1 Minutos
+                    else
+                        Thread.Sleep(60000 * 30); //30 Minutos
                 }
             }
         }
@@ -159,8 +183,11 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(ExecutarCampanhaErros) Erros: " + ex.Message);
-                    Thread.Sleep(60000 * 60); //60 Minutos
+                    WriteLine("(ExecutarCampanhaErros) Erros: " + ex.Message, ex);
+                    if (ex.Message.IndexOf("Server not found") >= 0)
+                        Thread.Sleep(60000); //1 Minutos
+                    else
+                        Thread.Sleep(60000 * 30); //30 Minutos
                 }
             }
         }
@@ -178,8 +205,11 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(ExecutarCampanhaUnsubscribeAndSubscribe) Erros: " + ex.Message);
-                    Thread.Sleep(60000 * 30); //30 Minutos
+                    WriteLine("(ExecutarCampanhaUnsubscribeAndSubscribe) Erros: " + ex.Message, ex);
+                    if (ex.Message.IndexOf("Server not found") >= 0)
+                        Thread.Sleep(60000); //1 Minutos
+                    else
+                        Thread.Sleep(60000 * 30); //30 Minutos
                 }
             }
         }
@@ -196,6 +226,31 @@ namespace AspMailList.Service
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
+                }
+            }
+        }
+
+        public static void WriteLine(string value, Exception ex)
+        {
+            lock (lockObject)  // all other threads will wait for y
+            {
+                Console.WriteLine(value);
+                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                {
+                    lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
+                    lockStreamWriter.Write(Environment.NewLine);
+                    if (ex != null)
+                    {
+                        lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": Erro: " + ex.Message);
+                        lockStreamWriter.Write(Environment.NewLine);
+                        lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": StackTrace: " + ex.StackTrace);
+                        lockStreamWriter.Write(Environment.NewLine);
+                        if (ex.InnerException != null)
+                        {
+                            lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": InnerException: " + ex.InnerException.Message);
+                            lockStreamWriter.Write(Environment.NewLine);
+                        }
+                    }
                 }
             }
         }

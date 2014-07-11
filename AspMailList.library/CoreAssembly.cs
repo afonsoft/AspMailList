@@ -15,6 +15,11 @@ namespace AspMailList.library
         public static readonly Assembly Reference = typeof(CoreAssembly).Assembly;
         public static readonly Version Version = Reference.GetName().Version;
 
+        public static bool IsRunningOnMono()
+        {
+            return Type.GetType("Mono.Runtime") != null;
+        }
+
         /// <summary>
         /// get File Version
         /// </summary>
