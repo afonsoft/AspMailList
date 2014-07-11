@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="afonsoftcombr_db" Class="dbMalaDiretaDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=mssql.afonsoft.com.br;Initial Catalog=afonsoftcombr_db;User ID=afonsoftcombr" SettingsObjectName="AspMailList.Service.Properties.Settings" SettingsPropertyName="afonsoftcombr_dbConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="afonsoftcombr.Mala_Direta" Member="Mala_Diretas">
+    <Type Name="Mala_Direta">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="email" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+      <Column Name="dtCadastro" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="dtExclusao" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Association Name="Mala_Direta_Mala_Direta_Campanha_Unsubscribe" Member="Mala_Direta_Campanha_Unsubscribes" ThisKey="id" OtherKey="idMail" Type="Mala_Direta_Campanha_Unsubscribe" />
+      <Association Name="Mala_Direta_Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha_Enviados" ThisKey="id" OtherKey="idMail" Type="Mala_Direta_Campanha_Enviado" />
+    </Type>
+  </Table>
+  <Table Name="afonsoftcombr.Mala_Direta_Campanha_Unsubscribe" Member="Mala_Direta_Campanha_Unsubscribes">
+    <Type Name="Mala_Direta_Campanha_Unsubscribe">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="idMail" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="idCampanha" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="dtUnsubscribe" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Association Name="Mala_Direta_Mala_Direta_Campanha_Unsubscribe" Member="Mala_Direta" ThisKey="idMail" OtherKey="id" Type="Mala_Direta" IsForeignKey="true" />
+      <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Unsubscribe" Member="Mala_Direta_Campanha" ThisKey="idCampanha" OtherKey="id" Type="Mala_Direta_Campanha" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="afonsoftcombr.Mala_Direta_Campanha" Member="Mala_Direta_Campanhas">
+    <Type Name="Mala_Direta_Campanha">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="DisplayName" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="ReplyTo" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="[From]" Member="From" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="SmtpServer" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="EnableSsl" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="SmtpPort" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="PopPort" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SmtpUser" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="SmtpPassword" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="Subject" Type="System.String" DbType="NVarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="BodyHtml" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="AttachmentPath" Type="System.String" DbType="NVarChar(4000)" CanBeNull="true" />
+      <Column Name="Enabled" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Unsubscribe" Member="Mala_Direta_Campanha_Unsubscribes" ThisKey="id" OtherKey="idCampanha" Type="Mala_Direta_Campanha_Unsubscribe" />
+      <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha_Enviados" ThisKey="id" OtherKey="idCampanha" Type="Mala_Direta_Campanha_Enviado" />
+    </Type>
+  </Table>
+  <Table Name="afonsoftcombr.Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha_Enviados">
+    <Type Name="Mala_Direta_Campanha_Enviado">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="idMail" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="idCampanha" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="dtEnvio" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Association Name="Mala_Direta_Mala_Direta_Campanha_Enviado" Member="Mala_Direta" ThisKey="idMail" OtherKey="id" Type="Mala_Direta" IsForeignKey="true" />
+      <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha" ThisKey="idCampanha" OtherKey="id" Type="Mala_Direta_Campanha" IsForeignKey="true" />
+    </Type>
+  </Table>
+</Database>
