@@ -50,4 +50,22 @@
       <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha" ThisKey="idCampanha" OtherKey="id" Type="Mala_Direta_Campanha" IsForeignKey="true" />
     </Type>
   </Table>
+  <Function Name="afonsoftcombr.Sp_camanha_email_nao_enviado" Method="Sp_camanha_email_nao_enviado">
+    <Parameter Name="idCampanha" Type="System.Int32" DbType="Int" />
+    <ElementType Name="Sp_camanha_email_nao_enviadoResult">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="email" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+      <Column Name="dtCadastro" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="dtExclusao" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="afonsoftcombr.Sp_camanha_email_enviado" Method="Sp_camanha_email_enviado">
+    <Parameter Name="idCampanha" Type="System.Int32" DbType="Int" />
+    <ElementType Name="Sp_camanha_email_enviadoResult">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="email" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+      <Column Name="dtCadastro" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="dtExclusao" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+    </ElementType>
+  </Function>
 </Database>
