@@ -68,9 +68,9 @@ namespace AspMailList.library
         {
             Pop3Client client = new Pop3Client();
             // Connect to the server
-            client.Connect(hostname, port, useSsl);
+            client.Connect(hostname, port, useSsl, 120000, 120000, null);
             // Authenticate ourselves towards the server
-            client.Authenticate(username, password);
+            client.Authenticate(username, password, AuthenticationMethod.Auto);
             return client;
         }
 

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?><Database Name="afonsoftcombr_db" Class="dbMalaDiretaDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
-  <Connection Mode="AppSettings" ConnectionString="Data Source=mssql.afonsoft.com.br;Initial Catalog=afonsoftcombr_db;User ID=afonsoftcombr" SettingsObjectName="AspMailList.Service.Properties.Settings" SettingsPropertyName="afonsoftcombr_dbConnectionString" Provider="System.Data.SqlClient" />
+  <Connection Mode="AppSettings" ConnectionString="Data Source=mssql.afonsoft.com.br;Initial Catalog=afonsoftcombr_db;Persist Security Info=True;User ID=afonsoftcombr;Connect Timeout=360000;Load Balance Timeout=360000" SettingsObjectName="AspMailList.Service.Properties.Settings" SettingsPropertyName="afonsoftcombr_dbConnectionString" Provider="System.Data.SqlClient" />
   <Table Name="afonsoftcombr.Mala_Direta" Member="Mala_Diretas">
     <Type Name="Mala_Direta">
       <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
