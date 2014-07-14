@@ -164,13 +164,13 @@ namespace AspMailList.Service
                 long CountTotal = 0;
                 long CountError = 0;
 
-                List<Mala_Direta> Emails = new List<Mala_Direta>();
-
+                List<Sp_camanha_email_nao_enviadoResult> Emails = new List<Sp_camanha_email_nao_enviadoResult>();
                 WriteLine("Lendo database...");
-                //Emails = (from m in db.Mala_Diretas
-                //          select m).ToList();
+                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                {
+                    Emails = db.Sp_camanha_email_nao_enviado(threadCampanha.Campanha.id).ToList();
+                }
                 WriteLine("Localizado " + Emails.Count() + " registro.");
-
                 Smtp mail = new Smtp();
                 mail.Body = System.Web.HttpUtility.HtmlDecode(threadCampanha.Campanha.BodyHtml);
                 mail.EnableSsl = threadCampanha.Campanha.EnableSsl;
@@ -182,9 +182,10 @@ namespace AspMailList.Service
                 mail.UseCredentials = true;
                 mail.User = threadCampanha.Campanha.SmtpUser;
 
-                foreach (Mala_Direta md in Emails)
+                foreach (Sp_camanha_email_nao_enviadoResult md in Emails)
                 {
                     totalEnvio++;
+
                     if (!isRunnig)
                         return;
 
@@ -294,7 +295,7 @@ namespace AspMailList.Service
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
                     WriteLine("Iniciando (Unsubscribe And Subscribe): " + threadCampanha.Campanha.DisplayName);
-                    threadCampanha.ProcessarUnsubscribeAndSubscribe(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName);
+                    threadCampanha.ProcessarUnsubscribeAndSubscribe(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName, threadCampanha.Campanha.id);
                     Thread.Sleep(60005); //1 Minutos
                 }
                 catch (Exception ex)
@@ -430,7 +431,7 @@ namespace AspMailList.Service
                 }
             }
         }
-        public void ProcessarUnsubscribeAndSubscribe(string host, int popPort, int smtpPort, bool ssl, string user, string pass, string displayName)
+        public void ProcessarUnsubscribeAndSubscribe(string host, int popPort, int smtpPort, bool ssl, string user, string pass, string displayName, int idCampanha)
         {
             AspMailList.library.Pop3 pop = new AspMailList.library.Pop3();
             using (Pop3Client client = pop.pop3Client(host, popPort, ssl, user, pass))
@@ -474,8 +475,16 @@ namespace AspMailList.Service
                                 var optdelete = (from m in db.Mala_Diretas
                                                  where m.email == sfrom
                                                  select m);
-                                db.Mala_Diretas.DeleteAllOnSubmit(optdelete);
-                                db.SubmitChanges();
+
+                                foreach (var opt in optdelete)
+                                {
+                                    Mala_Direta_Campanha_Unsubscribe m = new Mala_Direta_Campanha_Unsubscribe();
+                                    m.dtUnsubscribe = DateTime.Now;
+                                    m.idCampanha = idCampanha;
+                                    m.idMail = opt.id;
+                                    db.Mala_Direta_Campanha_Unsubscribes.InsertOnSubmit(m);
+                                    db.SubmitChanges();
+                                }
                             }
                         }
 

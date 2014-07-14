@@ -105,6 +105,20 @@ namespace AspMailList.Service
 				return this.GetTable<Mala_Direta_Campanha_Enviado>();
 			}
 		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="afonsoftcombr.Sp_camanha_email_nao_enviado")]
+		public ISingleResult<Sp_camanha_email_nao_enviadoResult> Sp_camanha_email_nao_enviado([global::System.Data.Linq.Mapping.ParameterAttribute(DbType="Int")] System.Nullable<int> idCampanha)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), idCampanha);
+			return ((ISingleResult<Sp_camanha_email_nao_enviadoResult>)(result.ReturnValue));
+		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="afonsoftcombr.Sp_camanha_email_enviado")]
+		public ISingleResult<Sp_camanha_email_enviadoResult> Sp_camanha_email_enviado([global::System.Data.Linq.Mapping.ParameterAttribute(DbType="Int")] System.Nullable<int> idCampanha)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), idCampanha);
+			return ((ISingleResult<Sp_camanha_email_enviadoResult>)(result.ReturnValue));
+		}
 	}
 	
 	[global::System.Data.Linq.Mapping.TableAttribute(Name="afonsoftcombr.Mala_Direta")]
@@ -1155,6 +1169,166 @@ namespace AspMailList.Service
 			if ((this.PropertyChanged != null))
 			{
 				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	public partial class Sp_camanha_email_nao_enviadoResult
+	{
+		
+		private int _id;
+		
+		private string _email;
+		
+		private System.DateTime _dtCadastro;
+		
+		private System.Nullable<System.DateTime> _dtExclusao;
+		
+		public Sp_camanha_email_nao_enviadoResult()
+		{
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_id", DbType="Int NOT NULL")]
+		public int id
+		{
+			get
+			{
+				return this._id;
+			}
+			set
+			{
+				if ((this._id != value))
+				{
+					this._id = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_email", DbType="VarChar(500) NOT NULL", CanBeNull=false)]
+		public string email
+		{
+			get
+			{
+				return this._email;
+			}
+			set
+			{
+				if ((this._email != value))
+				{
+					this._email = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_dtCadastro", DbType="DateTime NOT NULL")]
+		public System.DateTime dtCadastro
+		{
+			get
+			{
+				return this._dtCadastro;
+			}
+			set
+			{
+				if ((this._dtCadastro != value))
+				{
+					this._dtCadastro = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_dtExclusao", DbType="DateTime")]
+		public System.Nullable<System.DateTime> dtExclusao
+		{
+			get
+			{
+				return this._dtExclusao;
+			}
+			set
+			{
+				if ((this._dtExclusao != value))
+				{
+					this._dtExclusao = value;
+				}
+			}
+		}
+	}
+	
+	public partial class Sp_camanha_email_enviadoResult
+	{
+		
+		private int _id;
+		
+		private string _email;
+		
+		private System.DateTime _dtCadastro;
+		
+		private System.Nullable<System.DateTime> _dtExclusao;
+		
+		public Sp_camanha_email_enviadoResult()
+		{
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_id", DbType="Int NOT NULL")]
+		public int id
+		{
+			get
+			{
+				return this._id;
+			}
+			set
+			{
+				if ((this._id != value))
+				{
+					this._id = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_email", DbType="VarChar(500) NOT NULL", CanBeNull=false)]
+		public string email
+		{
+			get
+			{
+				return this._email;
+			}
+			set
+			{
+				if ((this._email != value))
+				{
+					this._email = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_dtCadastro", DbType="DateTime NOT NULL")]
+		public System.DateTime dtCadastro
+		{
+			get
+			{
+				return this._dtCadastro;
+			}
+			set
+			{
+				if ((this._dtCadastro != value))
+				{
+					this._dtCadastro = value;
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_dtExclusao", DbType="DateTime")]
+		public System.Nullable<System.DateTime> dtExclusao
+		{
+			get
+			{
+				return this._dtExclusao;
+			}
+			set
+			{
+				if ((this._dtExclusao != value))
+				{
+					this._dtExclusao = value;
+				}
 			}
 		}
 	}
