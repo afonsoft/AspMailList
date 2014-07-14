@@ -155,8 +155,10 @@ namespace AspMailList.Service
             }
         }
 
-        private static void ExecutarCampanhaEnvioEmail(object _myThreadCampanha) 
+        private static void ExecutarCampanhaEnvioEmail(object _myThreadCampanha)
         {
+            while (isRunnig)
+            {
                 myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
                 int enviado = 0;
                 int totalEnvio = 0;
@@ -168,7 +170,11 @@ namespace AspMailList.Service
                 WriteLine("Lendo database...");
                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                 {
+                    db.ObjectTrackingEnabled = false;
+                    if (!CoreAssembly.IsRunningOnMono())
+                        db.CommandTimeout = db.Connection.ConnectionTimeout;
                     Emails = db.Sp_camanha_email_nao_enviado(threadCampanha.Campanha.id).ToList();
+                    //LER DE 5000 EM 5000 E-MAILS
                 }
                 WriteLine("Localizado " + Emails.Count() + " registro.");
                 Smtp mail = new Smtp();
@@ -189,7 +195,7 @@ namespace AspMailList.Service
                     if (!isRunnig)
                         return;
 
-                    mail.To = md.email;
+                    mail.To = md.email.Replace("\t", "").Replace("\r", "").Replace("\n", "");
                     try
                     {
                         mail.EnviarEmail();
@@ -198,7 +204,9 @@ namespace AspMailList.Service
                         System.Threading.Thread.Sleep(500);
                         using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                         {
-                            db.CommandTimeout = db.Connection.ConnectionTimeout;
+                            if (!CoreAssembly.IsRunningOnMono())
+                                db.CommandTimeout = db.Connection.ConnectionTimeout;
+
                             Mala_Direta_Campanha_Enviado menivado = new Mala_Direta_Campanha_Enviado();
                             menivado.dtEnvio = DateTime.Now;
                             menivado.idCampanha = threadCampanha.Campanha.id;
@@ -213,7 +221,7 @@ namespace AspMailList.Service
                         if (enviado >= 25)
                         {
                             enviado = 0;
-                            System.Threading.Thread.Sleep(10000); //Esperar 10 seg. apos o envio de 30;
+                            System.Threading.Thread.Sleep(10000); //Esperar 10 seg. apos o envio de 25;
                         }
                     }
 
@@ -240,6 +248,7 @@ namespace AspMailList.Service
                         }
                     }
                 }
+            }
         }
         private static void ExecutarCampanhaHelps(object _myThreadCampanha)
         {
