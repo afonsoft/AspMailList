@@ -160,6 +160,7 @@ namespace AspMailList.Service
             while (isRunnig)
             {
                 myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
+                WriteLine("(Campanha EnvioEmail): " + threadCampanha.Campanha.DisplayName);
                 int enviado = 0;
                 int totalEnvio = 0;
                 int Errocount = 0;
@@ -176,7 +177,7 @@ namespace AspMailList.Service
                     Emails = db.Sp_camanha_email_nao_enviado(threadCampanha.Campanha.id).ToList();
                     //LER DE 5000 EM 5000 E-MAILS
                 }
-                WriteLine("Localizado " + Emails.Count() + " registro.");
+                WriteLine("Localizado " + Emails.Count() + " registro. (Limite 5000 e-mails)");
                 Smtp mail = new Smtp();
                 mail.Body = System.Web.HttpUtility.HtmlDecode(threadCampanha.Campanha.BodyHtml);
                 mail.EnableSsl = threadCampanha.Campanha.EnableSsl;
@@ -217,6 +218,7 @@ namespace AspMailList.Service
 
                         CountTotal++;
                         Errocount = 0;
+                        WriteLine("Enviado " + CountTotal + " de " + Emails.Count() + " e-mails. Camapnha: " + mail.DisplayName);
 
                         if (enviado >= 25)
                         {
@@ -228,17 +230,19 @@ namespace AspMailList.Service
                     catch (Exception ex)
                     {
                         CountError++;
-                        WriteLine(string.Format("Destino: {0} - Erro: {1} ", md.email, ex.Message), ex);
+                        WriteLine(string.Format("Destino: {0} - Erro: {1} -  Camapnha: {2}", md.email, ex.Message, mail.DisplayName), ex);
 
                         int time = 60000;
                         if (ex.Message.Contains("too many messages"))
                         {
                             Errocount++;
-                            time = 300000 * Errocount; //Esperar (5 * erros) minutos antes de enviar o proximo.
+                            time = 900000 * Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
                         else
                             time = 60000; //Qualquer erro esperar 1 minuto.
 
+                        WriteLine(string.Format("Esperando {0} segundos para tentar enviar novamente o e-mail -  Camapnha: {1}", time , mail.DisplayName));
+                        
                         for (int i = 0; i <= time; i++)
                         {
                             if (!isRunnig)
@@ -258,7 +262,7 @@ namespace AspMailList.Service
                 try
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-                    WriteLine("Iniciando (Campanha Help): " + threadCampanha.Campanha.DisplayName);
+                    WriteLine("(Campanha Help): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarHelps(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName);
                     Thread.Sleep(60010); //1 Minutos
                 }
@@ -281,7 +285,7 @@ namespace AspMailList.Service
                 try
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-                    WriteLine("Iniciando (Campanha Erros): " + threadCampanha.Campanha.DisplayName);
+                    WriteLine("(Campanha Erros): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarErros(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword);
                     Thread.Sleep(60100 * 10); //10 Minutos
                 }
@@ -303,7 +307,7 @@ namespace AspMailList.Service
                 try
                 {
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-                    WriteLine("Iniciando (Unsubscribe And Subscribe): " + threadCampanha.Campanha.DisplayName);
+                    WriteLine("(Unsubscribe And Subscribe): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarUnsubscribeAndSubscribe(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.SmtpPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword, threadCampanha.Campanha.DisplayName, threadCampanha.Campanha.id);
                     Thread.Sleep(60005); //1 Minutos
                 }
@@ -366,6 +370,7 @@ namespace AspMailList.Service
         {
             int count = 0;
             AspMailList.library.Pop3 pop = new AspMailList.library.Pop3();
+            string[] emails = new string[0];
             using (Pop3Client client = pop.pop3Client(host, port, ssl, user, pass))
             {
                 List<Message> lst = pop.FetchAllMessages(client);
@@ -373,10 +378,10 @@ namespace AspMailList.Service
                 {
                     string Subject = msg.Headers.Subject.ToLower().Trim();
 
-                    if (Subject.IndexOf("mail delivery") >= 0 || 
-                        Subject.IndexOf("failed") >= 0 || 
-                        Subject.IndexOf("undelivered") >= 0 || 
-                        Subject.IndexOf("não entregue") >= 0 || 
+                    if (Subject.IndexOf("mail delivery") >= 0 ||
+                        Subject.IndexOf("failed") >= 0 ||
+                        Subject.IndexOf("undelivered") >= 0 ||
+                        Subject.IndexOf("não entregue") >= 0 ||
                         Subject.IndexOf("postmaster") >= 0 ||
                         Subject.IndexOf("delivery failure") >= 0 ||
                         Subject.IndexOf("undeliverable") >= 0)
@@ -391,9 +396,9 @@ namespace AspMailList.Service
                         string Body = msgpart.GetBodyAsText();
 
                         string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
-                        string[] emails = (from e in femails
-                                           where !e.Contains(host)
-                                           select e).ToArray();
+                        emails = (from e in femails
+                                  where !e.Contains(host)
+                                  select e).ToArray();
 
                         using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                         {
@@ -401,13 +406,30 @@ namespace AspMailList.Service
                                              where emails.Contains(m.email)
                                              select m);
 
+                            foreach (var opt in optDelete)
+                            {
+                                var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                                   where m.idMail == opt.id
+                                                   select m);
+
+                                db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
+                                db.SubmitChanges();
+
+                                var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                                          where m.idMail == opt.id
+                                                          select m);
+
+                                db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                db.SubmitChanges();
+                            }
+
                             db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
                             db.SubmitChanges();
                         }
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
                     }
                 }
-                WriteLine("Removido " + count + " e-mails com erros.");
+                WriteLine("Removido " + count + " e-mails com erros. " + string.Join(";", emails));
             }
         }
         public void ProcessarHelps(string host, int popPort, int smtpPort, bool ssl, string user, string pass, string displayName)
@@ -453,7 +475,7 @@ namespace AspMailList.Service
                     {
                         bool subscribe = Subject.IndexOf("unsubscribe") < 0;
                         string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
-                        WriteLine("Enviando e-mail de help para " + sfrom + " com objetivo " + Subject);
+                        WriteLine("Enviando e-mail para " + sfrom + " com objetivo " + Subject);
                         AspMailList.library.Smtp smtp = new library.Smtp();
                         smtp.Subject = "Informações sobre a subscrição";
                         smtp.To = sfrom;
