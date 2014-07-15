@@ -124,38 +124,6 @@ namespace AspMailList.library
         }
         #endregion
 
-        private MailMessage Mail()
-        {
-            MailMessage mail = new MailMessage()
-            {
-                Subject = DisplayName,
-                Body = Body,
-                IsBodyHtml = true,
-                Priority = MailPriority.Normal,
-                //Preventing gmail to mark our mails as spam
-                BodyEncoding = Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage),
-                SubjectEncoding = Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage),
-            };
-
-            mail.Headers.Add("X-Company", DisplayName);
-            mail.Headers.Add("X-Location", "Brazil");
-            mail.Headers.Add("x-spam-flag", "NO");
-            mail.Headers.Add("X-Organization", DisplayName);
-            mail.Headers.Add("X-Unique-Id", GetUniqueKey(8));
-
-            string dominio = From.Trim().ToLower().Split('@')[1];
-            mail.Headers.Add("Message-Id", String.Concat("<", DateTime.Now.ToString("yyMMdd"), ".", DateTime.Now.ToString("HHmmss"), "@", dominio, ">"));
-
-            mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(Body, Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage), "text/html"));
-
-            foreach (string file in LstFile)
-            {
-                if (!string.IsNullOrEmpty(file))
-                    mail.Attachments.Add(new Attachment(file));
-            }
-
-            return mail;
-        }
         public string GetUniqueKey(int Size)
         {
             char[] chars = "0123456789".ToCharArray();
@@ -215,7 +183,7 @@ namespace AspMailList.library
                 MailAddress from = new MailAddress(From.Trim().ToLower(), DisplayName);
                 using (MailMessage mail = new MailMessage())
                 {
-
+                    Body = Body + getRodape(User);
                     mail.Subject = DisplayName;
                     mail.Body = Body;
                     mail.IsBodyHtml = true;
@@ -233,7 +201,7 @@ namespace AspMailList.library
                     mail.Headers.Add("X-Application-name", "AspMailList");
                     mail.Headers.Add("X-AspMailList-File-Version", CoreAssembly.getFileVersion);
                     mail.Headers.Add("X-AspMailList-Version", CoreAssembly.getVersion);
-
+                    mail.Headers.Add("Mailing-List", "contact " + User + "?subject=Help; run by AspMailList");
                     mail.Headers.Add("List-Help", "<mailto:" + User + "?subject=Help>");
                     mail.Headers.Add("List-Unsubscribe", "<mailto:" + User + "?subject=Unsubscribe>");
                     mail.Headers.Add("List-Subscribe", "<mailto:" + User + "?subject=Subscribe>");
@@ -335,7 +303,10 @@ namespace AspMailList.library
             }
         }
 
-        
+        private string getRodape(string email)
+        {
+            return "<br/><span style=\"color:#CFCFCF;font-size:8pt;text-decoration: none;\"><a href='mailto:" + email + "?subject=Help'  style=\"color:#CFCFCF;font-size:8pt;text-decoration: none;\">Informações sobre a lista de distribuição</a><br/><a href='mailto:" + email + "?subject=Unsubscribe'  style=\"color:#CFCFCF;font-size:8pt;text-decoration: none;\">Sair desta lista de distribuição</a></span>";
+        }
     }
 }
 
