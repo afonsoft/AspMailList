@@ -68,4 +68,8 @@
       <Column Name="dtExclusao" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
     </ElementType>
   </Function>
+  <Function Name="afonsoftcombr.Mala_Direta_add_Email" Method="Mala_Direta_add_Email">
+    <Parameter Name="mail" Type="System.String" DbType="VarChar(255)" />
+    <Return Type="System.Int32" />
+  </Function>
 </Database>
