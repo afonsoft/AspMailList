@@ -287,7 +287,7 @@ namespace AspMailList.Service
                     myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
                     WriteLine("(Campanha Erros): " + threadCampanha.Campanha.DisplayName);
                     threadCampanha.ProcessarErros(threadCampanha.Campanha.SmtpServer, threadCampanha.Campanha.PopPort, threadCampanha.Campanha.EnableSsl, threadCampanha.Campanha.SmtpUser, threadCampanha.Campanha.SmtpPassword);
-                    Thread.Sleep(60100 * 10); //10 Minutos
+                    Thread.Sleep(60100); //1 Minutos
                 }
                 catch (Exception ex)
                 {
@@ -384,6 +384,7 @@ namespace AspMailList.Service
                         Subject.IndexOf("não entregue") >= 0 ||
                         Subject.IndexOf("postmaster") >= 0 ||
                         Subject.IndexOf("delivery failure") >= 0 ||
+                        Subject.IndexOf("failure") >= 0 ||
                         Subject.IndexOf("undeliverable") >= 0)
                     {
                         count++;
@@ -427,9 +428,10 @@ namespace AspMailList.Service
                             db.SubmitChanges();
                         }
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                        WriteLine("Removido o e-mail " + string.Join(";", emails) + " - Subject: " + Subject);
+                        return;
                     }
                 }
-                WriteLine("Removido " + count + " e-mails com erros. " + string.Join(";", emails));
             }
         }
         public void ProcessarHelps(string host, int popPort, int smtpPort, bool ssl, string user, string pass, string displayName)
