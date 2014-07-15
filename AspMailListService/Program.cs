@@ -50,7 +50,8 @@ namespace AspMailList.Service
                 }
             }
         }
-        public static List<Thread >Threads { get; set; }
+        public static List<Thread> Threads { get; set; }
+        public static List<myThreadCampanha> ThreadCampanha { get; set; }
         
         private static List<string> _emails = null;
         public static List<string> Emails
@@ -79,6 +80,7 @@ namespace AspMailList.Service
                 WriteLine("Versão Aplicação: " + FileVersionInfo.GetVersionInfo(typeof(Program).Assembly.Location).FileVersion + " - " + typeof(Program).Assembly.GetName().Version.ToString());
                 WriteLine("Versão biblioteca: " + CoreAssembly.getFileVersion + " - " + CoreAssembly.getVersion);
                 WriteLine("Pressine Q para Sair. (Press Q for Exit)");
+                WriteLine("Pressine D para Debug. (Press D for Debug)");
                 AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit); 
                 WriteLine("Recuperando a lista de Campanhas.");
                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
@@ -90,9 +92,12 @@ namespace AspMailList.Service
                     WriteLine("Total de Campanhas: " + listCampanha.Count);
                     WriteLine("Iniciando as Threads das campanhas.");
                     Threads = new List<Thread>();
+                    ThreadCampanha = new List<myThreadCampanha>();
                     foreach (var campanha in listCampanha)
                     {
                         myThreadCampanha threadcamp = new myThreadCampanha(campanha);
+                        ThreadCampanha.Add(threadcamp);
+
                         WriteLine("Iniciando a Campanha: " + threadcamp.Campanha.DisplayName + " - ID: " + threadcamp.Campanha.id);
                         Thread threadCampanhaHelp = new Thread(new ParameterizedThreadStart(ExecutarCampanhaHelps));
                         threadCampanhaHelp.IsBackground = true;
@@ -125,8 +130,9 @@ namespace AspMailList.Service
                         threadCampanhaEnvioEmail.Start(threadcamp);
                         Threads.Add(threadCampanhaEnvioEmail);
                         Thread.Sleep(1000);
-
                     }
+
+                    WriteLine("Total de Threads iniciadas " + Threads.Count);
                     while (isRunnig)
                     {
                         Thread.Sleep(500);
@@ -134,6 +140,15 @@ namespace AspMailList.Service
                         if (keyinfo.Key == ConsoleKey.Q)
                         {
                             isRunnig = false;
+                        }
+                        else if (keyinfo.Key == ConsoleKey.D)
+                        {
+                            foreach (var t in ThreadCampanha)
+                            {
+                                t.Debug = !t.Debug;
+                                WriteLine("ID " + t.Campanha.id + " - Debug Mode " + (t.Debug ? "On" : "Off"));
+                            }
+                            
                         }
                         Thread.Sleep(500);
                     }
@@ -267,9 +282,10 @@ namespace AspMailList.Service
             }
         }
         private myThreadCampanha() { }
+        public bool Debug { get; set; }
         public int TimeSleep { get; set; }
         public Mala_Direta_Campanha Campanha { get; set; }
-        public myThreadCampanha(Mala_Direta_Campanha campamha) { Campanha = campamha; TimeSleep = 60000; pop = new AspMailList.library.Pop3(); }
+        public myThreadCampanha(Mala_Direta_Campanha campamha) { Campanha = campamha; TimeSleep = 60000; pop = new AspMailList.library.Pop3(); Debug = false; }
         public void ProcessarEmail() 
         {
             int enviado = 0;
@@ -287,6 +303,10 @@ namespace AspMailList.Service
                 Emails = db.Sp_camanha_email_nao_enviado(Campanha.id).ToList();
                 //LER DE 5000 EM 5000 E-MAILS
             }
+
+            if (Debug)
+                WriteLine("ID " + Campanha.id + " - Total de registros: " + Emails.Count);
+
             Smtp mail = new Smtp();
             mail.Body = System.Web.HttpUtility.HtmlDecode(Campanha.BodyHtml);
             mail.EnableSsl = Campanha.EnableSsl;
@@ -307,6 +327,10 @@ namespace AspMailList.Service
                 {
                     mail.EnviarEmail();
                     enviado++;
+
+                    if (Debug)
+                        WriteLine("ID " + Campanha.id + " - Enviados: " + totalEnvio + " de " + Emails.Count + " - Email enviado: " + mail.To);
+
                     System.Threading.Thread.Sleep(500);
                     using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                     {
@@ -356,6 +380,10 @@ namespace AspMailList.Service
             using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
             {
                 List<Message> lst = pop.FetchAllMessages(client);
+
+                if (Debug)
+                    WriteLine("ID " + Campanha.id + " - Total de e-mail: " + lst.Count);
+
                 foreach (Message msg in lst)
                 {
                     string Subject = msg.Headers.Subject.ToLower().Trim();
@@ -410,7 +438,8 @@ namespace AspMailList.Service
                             db.SubmitChanges();
                         }
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                        WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails) + " - Subject: " + Subject);
+                        if (Debug)
+                            WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails) + " - Subject: " + Subject);
                         return;
                     }
                 }
@@ -421,6 +450,10 @@ namespace AspMailList.Service
             using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
             {
                 List<Message> lst = pop.FetchAllMessages(client);
+                
+                if (Debug)
+                    WriteLine("ID " + Campanha.id + " - Total de e-mail: " + lst.Count);
+
                 foreach (Message msg in lst)
                 {
                     string Subject = msg.Headers.Subject.ToLower().Trim();
@@ -441,7 +474,8 @@ namespace AspMailList.Service
                         smtp.EnviarEmail();
 
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                        WriteLine("ID " + Campanha.id + " - Enviando e-mail de help para " + from);
+                        if (Debug)
+                            WriteLine("ID " + Campanha.id + " - Enviando e-mail de help para " + from);
                         return;
                     }
                 }
@@ -452,6 +486,10 @@ namespace AspMailList.Service
             using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
             {
                 List<Message> lst = pop.FetchAllMessages(client);
+
+                if (Debug)
+                    WriteLine("ID " + Campanha.id + " - Total de e-mail: " + lst.Count);
+
                 foreach (Message msg in lst)
                 {
                     string Subject = msg.Headers.Subject.ToLower().Trim();
@@ -501,7 +539,8 @@ namespace AspMailList.Service
                         }
 
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                        WriteLine("ID " + Campanha.id + " - Enviando e-mail para " + sfrom + " com objetivo " + Subject);
+                        if (Debug)
+                            WriteLine("ID " + Campanha.id + " - Enviando e-mail para " + sfrom + " com objetivo " + Subject);
                         return;
                     }
                 }
