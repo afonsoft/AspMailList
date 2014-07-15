@@ -119,6 +119,13 @@ namespace AspMailList.Service
 			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), idCampanha);
 			return ((ISingleResult<Sp_camanha_email_enviadoResult>)(result.ReturnValue));
 		}
+		
+		[global::System.Data.Linq.Mapping.FunctionAttribute(Name="afonsoftcombr.Mala_Direta_add_Email")]
+		public int Mala_Direta_add_Email([global::System.Data.Linq.Mapping.ParameterAttribute(DbType="VarChar(255)")] string mail)
+		{
+			IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), mail);
+			return ((int)(result.ReturnValue));
+		}
 	}
 	
 	[global::System.Data.Linq.Mapping.TableAttribute(Name="afonsoftcombr.Mala_Direta")]

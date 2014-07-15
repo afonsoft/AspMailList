@@ -69,16 +69,6 @@ namespace AspMailList.Service
         {
             WriteLine("Finalizando AspMailList");
             isRunnig = false;
-            foreach (Thread t in Threads)
-            {
-                try
-                {
-                    WriteLine("Finalizando as thread " + t.Name);
-                    t.Join();
-                    t.Abort();
-                }
-                catch { isRunnig = false; }
-            }
         }
 
         static void Main(string[] args)
@@ -88,6 +78,7 @@ namespace AspMailList.Service
                 WriteLine("Iniciando AspMailList");
                 WriteLine("Versão Aplicação: " + FileVersionInfo.GetVersionInfo(typeof(Program).Assembly.Location).FileVersion + " - " + typeof(Program).Assembly.GetName().Version.ToString());
                 WriteLine("Versão biblioteca: " + CoreAssembly.getFileVersion + " - " + CoreAssembly.getVersion);
+                WriteLine("Pressine Q para Sair. (Press Q for Exit)");
                 AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit); 
                 WriteLine("Recuperando a lista de Campanhas.");
                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
@@ -97,12 +88,12 @@ namespace AspMailList.Service
                                         select c).ToList();
 
                     WriteLine("Total de Campanhas: " + listCampanha.Count);
-                    WriteLine("Iniciando as Threads das campanhas");
+                    WriteLine("Iniciando as Threads das campanhas.");
                     Threads = new List<Thread>();
                     foreach (var campanha in listCampanha)
                     {
                         myThreadCampanha threadcamp = new myThreadCampanha(campanha);
-
+                        WriteLine("Iniciando a Campanha: " + threadcamp.Campanha.DisplayName + " - ID: " + threadcamp.Campanha.id);
                         Thread threadCampanhaHelp = new Thread(new ParameterizedThreadStart(ExecutarCampanhaHelps));
                         threadCampanhaHelp.IsBackground = true;
                         threadCampanhaHelp.Name = "ExecutarCampanhaHelps";
@@ -139,6 +130,12 @@ namespace AspMailList.Service
                     while (isRunnig)
                     {
                         Thread.Sleep(500);
+                        ConsoleKeyInfo keyinfo = Console.ReadKey();
+                        if (keyinfo.Key == ConsoleKey.Q)
+                        {
+                            isRunnig = false;
+                        }
+                        Thread.Sleep(500);
                     }
                 }
             }
@@ -159,7 +156,7 @@ namespace AspMailList.Service
         private static void ExecutarCampanhaEnvioEmail(object _myThreadCampanha)
         {
             myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-            WriteLine("(Campanha EnvioEmail): " + threadCampanha.Campanha.DisplayName);
+            WriteLine("ID " + threadCampanha.Campanha.id + " - Iniciando EnvioEmail");
             while (isRunnig)
             {
                 try
@@ -169,7 +166,7 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(Camapnha EnvioEmail) Erros: " + ex.Message, ex);
+                    WriteLine("ID " + threadCampanha.Campanha.id + " - EnvioEmail - Erros: " + ex.Message, ex);
                     Thread.Sleep(threadCampanha.TimeSleep);
                 }
             }
@@ -177,7 +174,7 @@ namespace AspMailList.Service
         private static void ExecutarCampanhaHelps(object _myThreadCampanha)
         {
             myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-            WriteLine("(Campanha Help): " + threadCampanha.Campanha.DisplayName);
+            WriteLine("ID " + threadCampanha.Campanha.id + " - Iniciando Help");
             while (isRunnig)
             {
                 try
@@ -187,7 +184,7 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(Camapnha Help) Erros: " + ex.Message, ex);
+                    WriteLine("ID " + threadCampanha.Campanha.id + " - Help - Erros: " + ex.Message, ex);
                     Thread.Sleep(threadCampanha.TimeSleep); 
                 }
             }
@@ -195,7 +192,7 @@ namespace AspMailList.Service
         private static void ExecutarCampanhaErros(object _myThreadCampanha)
         {
             myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-            WriteLine("(Campanha Erros): " + threadCampanha.Campanha.DisplayName);
+            WriteLine("ID " + threadCampanha.Campanha.id + " - Iniciando Tratamentos");
             while (isRunnig)
             {
                 try
@@ -205,7 +202,7 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(Campanha Erros) Erros: " + ex.Message, ex);
+                    WriteLine("ID " + threadCampanha.Campanha.id + " - Tratamentos - Erros: " + ex.Message, ex);
                     Thread.Sleep(threadCampanha.TimeSleep); 
                 }
             }
@@ -213,7 +210,7 @@ namespace AspMailList.Service
         private static void ExecutarCampanhaUnsubscribeAndSubscribe(object _myThreadCampanha)
         {
             myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
-            WriteLine("(Unsubscribe And Subscribe): " + threadCampanha.Campanha.DisplayName);
+            WriteLine("ID " + threadCampanha.Campanha.id + " - Iniciando Unsubscribe And Subscribe");
             while (isRunnig)
             {
                 try
@@ -223,7 +220,7 @@ namespace AspMailList.Service
                 }
                 catch (Exception ex)
                 {
-                    WriteLine("(Unsubscribe And Subscribe) Erros: " + ex.Message, ex);
+                    WriteLine("ID " + threadCampanha.Campanha.id + " - Unsubscribe And Subscribe - Erros: " + ex.Message, ex);
                     Thread.Sleep(threadCampanha.TimeSleep);
                 }
             }
@@ -334,9 +331,9 @@ namespace AspMailList.Service
 
                 catch (Exception ex)
                 {
-                    WriteLine("Enviados " + totalEnvio + " emails da Camapnha " + mail.DisplayName);
+                    WriteLine("ID " + Campanha.id + " - Enviados " + totalEnvio + " emails.");
                     CountError++;
-                    WriteLine(string.Format("Destino: {0} - Erro: {1} -  Camapnha: {2}", md.email, ex.Message, mail.DisplayName), ex);
+                    WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id), ex);
 
                     TimeSleep = 60000;
                     if (ex.Message.Contains("too many messages"))
@@ -347,7 +344,7 @@ namespace AspMailList.Service
                     else
                         TimeSleep = 60000; //Qualquer erro esperar 1 minuto.
 
-                    WriteLine(string.Format("Esperando {0} segundos para tentar enviar novamente o e-mail -  Camapnha: {1}", TimeSleep, mail.DisplayName));
+                    WriteLine(string.Format("ID {1} - Esperando {0} segundos para tentar novamente.", TimeSleep, Campanha.id));
                     System.Threading.Thread.Sleep(TimeSleep);
                 }
             }
@@ -413,7 +410,7 @@ namespace AspMailList.Service
                             db.SubmitChanges();
                         }
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                        WriteLine("Removido o e-mail " + string.Join(";", emails) + " - Subject: " + Subject);
+                        WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails) + " - Subject: " + Subject);
                         return;
                     }
                 }
@@ -430,7 +427,6 @@ namespace AspMailList.Service
                     if (Subject.IndexOf("help") >= 0)
                     {
                         string from = msg.Headers.From.Address.ToString().ToLower().Trim();
-                        WriteLine("Enviando e-mail de help para " + from);
                         AspMailList.library.Smtp smtp = new library.Smtp();
                         smtp.Subject = "Informações sobre a subscrição";
                         smtp.To = from;
@@ -445,6 +441,8 @@ namespace AspMailList.Service
                         smtp.EnviarEmail();
 
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                        WriteLine("ID " + Campanha.id + " - Enviando e-mail de help para " + from);
+                        return;
                     }
                 }
             }
@@ -461,7 +459,6 @@ namespace AspMailList.Service
                     {
                         bool subscribe = Subject.IndexOf("unsubscribe") < 0;
                         string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
-                        WriteLine("Enviando e-mail para " + sfrom + " com objetivo " + Subject);
                         AspMailList.library.Smtp smtp = new library.Smtp();
                         smtp.Subject = "Informações sobre a subscrição";
                         smtp.To = sfrom;
@@ -479,10 +476,7 @@ namespace AspMailList.Service
                         {
                             using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                             {
-                                Mala_Direta mala = new Mala_Direta();
-                                mala.email = sfrom;
-                                mala.dtCadastro = DateTime.Now;
-                                db.Mala_Diretas.InsertOnSubmit(mala);
+                                db.Mala_Direta_add_Email(sfrom);
                                 db.SubmitChanges();
                             }
                         }
@@ -507,6 +501,8 @@ namespace AspMailList.Service
                         }
 
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                        WriteLine("ID " + Campanha.id + " - Enviando e-mail para " + sfrom + " com objetivo " + Subject);
+                        return;
                     }
                 }
             }
