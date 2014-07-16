@@ -208,7 +208,7 @@ namespace AspMailList.Service
             while (isRunnig)
             {
                 threadCampanha.ProcessarErros();
-                Thread.Sleep(60000);
+                Thread.Sleep(5000);
             }
         }
         private static void ExecutarCampanhaUnsubscribeAndSubscribe(object _myThreadCampanha)
