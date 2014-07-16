@@ -399,10 +399,10 @@ namespace AspMailList.Service
                            select l).ToList();
 
                     if (Debug)
-                        WriteLine("ID " + Campanha.id + " - Total de e-mail: " + lst.Count);
+                        WriteLine("ID " + Campanha.id + " - Total de e-mail para remover: " + lst.Count);
 
                     if (lst.Count == 0)
-                        Thread.Sleep(TimeSleep);
+                        Thread.Sleep(60000);
 
                     foreach (Message msg in lst)
                     {
@@ -473,7 +473,7 @@ namespace AspMailList.Service
                            select l).ToList();
 
                     if (Debug)
-                        WriteLine("ID " + Campanha.id + " - Total de e-mail: " + lst.Count);
+                        WriteLine("ID " + Campanha.id + " - Total de e-mail para ajuda: " + lst.Count);
 
                     foreach (Message msg in lst)
                     {
@@ -522,7 +522,7 @@ namespace AspMailList.Service
                            select l).ToList();
 
                     if (Debug)
-                        WriteLine("ID " + Campanha.id + " - Total de e-mail: " + lst.Count);
+                        WriteLine("ID " + Campanha.id + " - Total de e-mail para Subscribe: " + lst.Count);
 
                     foreach (Message msg in lst)
                     {
