@@ -396,6 +396,11 @@ namespace AspMailList.Service
                            || l.Headers.Subject.ToLower().Trim().IndexOf("undeliverable") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("não entregue") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("delivery failure") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("falha na entrega") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("não foi possível enviar") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("Returned mail") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("delivery problems") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("retorno de mensagem") >= 0
                            select l).ToList();
 
                     if (Debug)
@@ -456,8 +461,14 @@ namespace AspMailList.Service
             }
             catch (Exception ex)
             {
-                WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message, ex);
                 CountErroTotalErros++;
+                if (ex.Message.IndexOf("-ERR") >= 0)
+                    WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message);
+                else
+                {
+                    WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message, ex);
+                    Thread.Sleep(TimeSleep);
+                }
             }
         }
         public void ProcessarHelps()
