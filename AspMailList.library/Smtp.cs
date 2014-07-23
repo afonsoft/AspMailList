@@ -183,15 +183,14 @@ namespace AspMailList.library
                 MailAddress from = new MailAddress(From.Trim().ToLower(), DisplayName);
                 using (MailMessage mail = new MailMessage())
                 {
-                    Body = Body + getRodape(User);
                     mail.Subject = DisplayName;
-                    mail.Body = Body;
+                    mail.Body = Body + getRodape(User);
                     mail.IsBodyHtml = true;
                     mail.Priority = MailPriority.Normal;
-                    //Preventing gmail to mark our mails as spam
+                    
                     mail.BodyEncoding = Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage);
                     mail.SubjectEncoding = Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage);
-
+                    //Preventing gmail to mark our mails as spam
                     mail.Headers.Add("X-Company", DisplayName);
                     mail.Headers.Add("X-Location", "Brazil");
                     mail.Headers.Add("x-spam-flag", "NO");
