@@ -357,16 +357,18 @@ namespace AspMailList.Service
                     {
                         WriteLine("ID " + Campanha.id + " - Enviados " + totalEnvio + " emails.");
                         CountEnvioErro++;
-                        WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id), ex);
-
                         TimeSleep = 60000;
                         if (ex.Message.Contains("too many messages"))
                         {
+                            WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id));
                             Errocount++;
                             TimeSleep = 900000 * Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
                         else
+                        {
+                            WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id), ex);
                             TimeSleep = 60000; //Qualquer erro esperar 1 minuto.
+                        }
 
                         WriteLine(string.Format("ID {1} - Esperando {0} segundos para tentar novamente.", TimeSleep, Campanha.id));
                         System.Threading.Thread.Sleep(TimeSleep);
@@ -386,6 +388,7 @@ namespace AspMailList.Service
                 using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
                     List<Message> lst = pop.FetchAllMessages(client);
+                    lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
 
                     lst = (from l in lst
                            where l.Headers.Subject.ToLower().Trim().IndexOf("mail delivery") >= 0
@@ -401,13 +404,27 @@ namespace AspMailList.Service
                            || l.Headers.Subject.ToLower().Trim().IndexOf("Returned mail") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("delivery problems") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("retorno de mensagem") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("returned mail") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("não é possível entregar") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("nao foi entregue") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("automática") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("automático") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("rejected") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("falha ao entregar") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("rejeitado") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("delivery status") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("devolvida") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("automatic") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("ausência") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("out of office") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("non remis") >= 0
                            select l).ToList();
 
                     if (Debug)
                         WriteLine("ID " + Campanha.id + " - Total de e-mail para remover: " + lst.Count);
 
                     if (lst.Count == 0)
-                        Thread.Sleep(60000);
+                        Thread.Sleep(TimeSleep);
 
                     foreach (Message msg in lst)
                     {
@@ -427,34 +444,43 @@ namespace AspMailList.Service
 
                         pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
 
-                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                        if (msg.Headers.Subject.ToLower().Trim().IndexOf("automática") < 0 
+                            && msg.Headers.Subject.ToLower().Trim().IndexOf("automático") < 0 
+                            && msg.Headers.Subject.ToLower().Trim().IndexOf("spam") < 0 
+                            && msg.Headers.Subject.ToLower().Trim().IndexOf("delivery status") < 0
+                            && msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") < 0
+                            && msg.Headers.Subject.ToLower().Trim().IndexOf("automatic") < 0
+                            && msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") < 0 
+                            && emails.Count() > 0)
                         {
-                            var optDelete = (from m in db.Mala_Diretas
-                                             where emails.Contains(m.email)
-                                             select m);
-
-                            foreach (var opt in optDelete)
+                            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                             {
-                                var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
-                                                   where m.idMail == opt.id
-                                                   select m);
+                                var optDelete = (from m in db.Mala_Diretas
+                                                 where emails.Contains(m.email)
+                                                 select m);
 
-                                db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
-                                db.SubmitChanges();
+                                foreach (var opt in optDelete)
+                                {
+                                    var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                                       where m.idMail == opt.id
+                                                       select m);
 
-                                var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
-                                                          where m.idMail == opt.id
-                                                          select m);
+                                    db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
+                                    db.SubmitChanges();
 
-                                db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                    var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                                              where m.idMail == opt.id
+                                                              select m);
+
+                                    db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                    db.SubmitChanges();
+                                }
+
+                                db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
                                 db.SubmitChanges();
                             }
-
-                            db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
-                            db.SubmitChanges();
-                            CountErroTotal++;
                         }
-
+                        CountErroTotal++;
                         WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
                     }
                 }
@@ -478,6 +504,7 @@ namespace AspMailList.Service
                 using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
                     List<Message> lst = pop.FetchAllMessages(client);
+                    lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
 
                     lst = (from l in lst
                            where l.Headers.Subject.ToLower().Trim().IndexOf("help") >= 0
@@ -526,6 +553,7 @@ namespace AspMailList.Service
                 using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
                     List<Message> lst = pop.FetchAllMessages(client);
+                    lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
 
                     lst = (from l in lst
                            where l.Headers.Subject.ToLower().Trim().IndexOf("subscribe") >= 0
