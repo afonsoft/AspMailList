@@ -225,7 +225,7 @@ namespace AspMailList.Service
     }
     public class myThreadCampanha
     {
-        #region Provate var
+        #region Private var
         private long CountEnvioSucesso = 0;
         private long CountEnvioErro = 0;
         private long CountEnvioTotal = 0;
@@ -238,7 +238,6 @@ namespace AspMailList.Service
         private long CountSubscribeTotalErros = 0;
         private static object lockObject = new object();
         #endregion
-
         private AspMailList.library.Pop3 pop { get; set; }
         private void WriteLine(string value)
         {
@@ -282,6 +281,19 @@ namespace AspMailList.Service
         }
         private myThreadCampanha() { }
         public bool Debug { get; set; }
+        public long CountTotalEnviados
+        {
+            get
+            {
+                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                {
+                    db.DeferredLoadingEnabled = false;
+                    return (from b in db.Mala_Direta_Campanha_Enviados
+                            where b.idCampanha == Campanha.id
+                            select b).Count();
+                }
+            }
+        } 
         public int TimeSleep { get; set; }
         public Mala_Direta_Campanha Campanha { get; set; }
         public myThreadCampanha(Mala_Direta_Campanha campamha) { Campanha = campamha; TimeSleep = 60000; pop = new AspMailList.library.Pop3(); Debug = false; }
@@ -558,6 +570,11 @@ namespace AspMailList.Service
                     lst = (from l in lst
                            where l.Headers.Subject.ToLower().Trim().IndexOf("subscribe") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("unsubscribe") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("add") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("remove") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("count") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("info") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("command") >= 0
                            select l).ToList();
 
                     if (Debug)
@@ -565,10 +582,20 @@ namespace AspMailList.Service
 
                     foreach (Message msg in lst)
                     {
+
                         string Subject = msg.Headers.Subject.ToLower().Trim();
+
+                        MessagePart msgpart = msg.FindFirstHtmlVersion();
+
+                        if (msgpart == null)
+                            msgpart = msg.FindFirstPlainTextVersion();
+                        if (msgpart == null)
+                            msgpart = msg.MessagePart;
+                        
                         if (Subject.IndexOf("subscribe") >= 0 || Subject.IndexOf("unsubscribe") >= 0)
                         {
-                            bool subscribe = Subject.IndexOf("unsubscribe") < 0;
+                            #region subscribe unsubscribe
+                            bool subscribe = Subject.IndexOf("unsubscribe") < 0 && Subject.IndexOf("subscribe") > 0;
                             string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
                             AspMailList.library.Smtp smtp = new library.Smtp();
                             smtp.Subject = "Informações sobre a subscrição";
@@ -616,6 +643,135 @@ namespace AspMailList.Service
                             }
                             WriteLine("ID " + Campanha.id + " - Enviando e-mail para " + sfrom + " com objetivo " + Subject);
                             break;
+                            #endregion
+                        }
+                        else if (Subject.IndexOf("add") >= 0)
+                        {
+                            #region add
+                            string Body = msgpart.GetBodyAsText();
+                            string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
+                            string[] emails = (from e in femails
+                                               where !e.Contains(Campanha.SmtpServer)
+                                               && !e.Contains("=")
+                                               select e).ToArray();
+
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+
+                            foreach (string sfrom in emails)
+                            {
+                                try
+                                {
+                                    AspMailList.library.Smtp smtp = new library.Smtp();
+                                    smtp.Subject = "Informações sobre a subscrição";
+                                    smtp.To = sfrom;
+                                    smtp.EnableSsl = Campanha.EnableSsl;
+                                    smtp.From = Campanha.SmtpUser;
+                                    smtp.Password = Campanha.SmtpPassword;
+                                    smtp.User = Campanha.SmtpUser;
+                                    smtp.Port = Campanha.SmtpPort.ToString();
+                                    smtp.SmtpServer = Campanha.SmtpServer;
+                                    smtp.DisplayName = Campanha.DisplayName;
+                                    smtp.Body = getHelpBodyUnsubscribeAndSubscribe(true);
+                                    smtp.EnviarEmail();
+                                }
+                                catch { }
+
+                                CountSubscribeTotal++;
+                                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                {
+                                    db.Mala_Direta_add_Email(sfrom);
+                                    db.SubmitChanges();
+                                }
+
+                                WriteLine("ID " + Campanha.id + " - Adicionado o e-mail " + sfrom);
+                            }
+                            #endregion
+                        }
+                        else if (Subject.IndexOf("remove") >= 0)
+                        {
+                            #region remove
+                            string Body = msgpart.GetBodyAsText();
+                            string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
+                            string[] emails = (from e in femails
+                                               where !e.Contains(Campanha.SmtpServer)
+                                               && !e.Contains("=")
+                                               select e).ToArray();
+
+                            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                            {
+                                var optDelete = (from m in db.Mala_Diretas
+                                                 where emails.Contains(m.email)
+                                                 select m);
+
+                                foreach (var opt in optDelete)
+                                {
+                                    var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                                       where m.idMail == opt.id
+                                                       select m);
+
+                                    db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
+                                    db.SubmitChanges();
+
+                                    var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                                              where m.idMail == opt.id
+                                                              select m);
+
+                                    db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                    db.SubmitChanges();
+                                }
+
+                                db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
+                                db.SubmitChanges();
+                            }
+
+                            WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                            #endregion
+                        }
+                        else if (Subject.IndexOf("count") >= 0 || Subject.IndexOf("info") >= 0)
+                        {
+                            #region info
+                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
+
+                            AspMailList.library.Smtp smtp = new library.Smtp();
+                            smtp.Subject = "Informações sobre a Lista";
+                            smtp.To = sfrom;
+                            smtp.EnableSsl = Campanha.EnableSsl;
+                            smtp.From = Campanha.SmtpUser;
+                            smtp.Password = Campanha.SmtpPassword;
+                            smtp.User = Campanha.SmtpUser;
+                            smtp.Port = Campanha.SmtpPort.ToString();
+                            smtp.SmtpServer = Campanha.SmtpServer;
+                            smtp.DisplayName = Campanha.DisplayName + " - Info";
+                            smtp.Body = this.ToString().Replace(Environment.NewLine, "<br/>");
+                            smtp.EnviarEmail();
+
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                            WriteLine("ID " + Campanha.id + " - Solicitou as informações para: " + sfrom);
+                            #endregion
+                        }
+                        else if (Subject.IndexOf("command") >= 0)
+                        {
+                            #region command
+                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
+
+                            AspMailList.library.Smtp smtp = new library.Smtp();
+                            smtp.Subject = "Informações sobre os comando da Lista";
+                            smtp.To = sfrom;
+                            smtp.EnableSsl = Campanha.EnableSsl;
+                            smtp.From = Campanha.SmtpUser;
+                            smtp.Password = Campanha.SmtpPassword;
+                            smtp.User = Campanha.SmtpUser;
+                            smtp.Port = Campanha.SmtpPort.ToString();
+                            smtp.SmtpServer = Campanha.SmtpServer;
+                            smtp.DisplayName = Campanha.DisplayName + " - Command";
+                            smtp.Body = getHelpBodyUnsubscribeAndSubscribe(true, true);
+                            smtp.EnviarEmail();
+
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                            WriteLine("ID " + Campanha.id + " - Solicitou os comandos para: " + sfrom);
+
+                            #endregion
                         }
                     }
                 }
@@ -643,20 +799,35 @@ namespace AspMailList.Service
         }
         public string getHelpBodyUnsubscribeAndSubscribe(bool Subscribe)
         {
+            return getHelpBodyUnsubscribeAndSubscribe(Subscribe, false);
+        }
+        public string getHelpBodyUnsubscribeAndSubscribe(bool Subscribe, bool command)
+        {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("<br>");
             sb.AppendLine("<b>Informações sobre a sua subscrição.</b>");
             sb.AppendLine("<br>");
-            if (Subscribe)
-                sb.AppendLine("<br>Você acabou de entrar no grupo da lista.");
-            else
-                sb.AppendLine("<br>Você acabou de sair no grupo da lista.");
+            if (!command)
+            {
+                if (Subscribe)
+                    sb.AppendLine("<br>Você acabou de entrar no grupo da lista.");
+                else
+                    sb.AppendLine("<br>Você acabou de sair no grupo da lista.");
+            }else
+                sb.AppendLine("<br>Comandos da Lista.");
             sb.AppendLine("<br>");
             sb.AppendLine("<br>List-Help: <a href='mailto:" + Campanha.SmtpUser + "?subject=Help'>" + Campanha.SmtpUser + "?subject=Help</a>");
             if (Subscribe)
                 sb.AppendLine("<br>List-Unsubscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=Unsubscribe'>" + Campanha.SmtpUser + "?subject=Unsubscribe</a>");
             else
                 sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=Subscribe'>" + Campanha.SmtpUser + "?subject=Subscribe</a>");
+            
+            if (command)
+            {
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=info'>" + Campanha.SmtpUser + "?subject=info</a> Recupera as informações de Status");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=add'>" + Campanha.SmtpUser + "?subject=add</a> Adiciona os email do corpo na lista" );
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=remove'>" + Campanha.SmtpUser + "?subject=remove</a> Remova os email do corpo na lista");
+            }
             sb.AppendLine("<br>");
             sb.AppendLine("<br>Obrigado.<br>");
             sb.AppendLine(Campanha.DisplayName);
@@ -669,6 +840,7 @@ namespace AspMailList.Service
             sb.AppendLine("");
             sb.AppendFormat("ID: {0} - Camapnha: {1}{2}", Campanha.id, Campanha.DisplayName, Environment.NewLine);
             sb.AppendFormat(" Envios com Sucessos : ->{0}{1}", CountEnvioSucesso, Environment.NewLine);
+            sb.AppendFormat(" Total Enviados      : ->{0}{1}", CountTotalEnviados, Environment.NewLine);
             sb.AppendFormat(" Envios com Erros    : ->{0}{1}", CountEnvioErro, Environment.NewLine);
             sb.AppendFormat(" Total de Envios     : ->{0}{1}", CountEnvioTotal, Environment.NewLine);
             sb.AppendFormat(" Total de Ajudas     : ->{0}{1}", CountHelpTotal, Environment.NewLine);
