@@ -13,13 +13,24 @@ namespace AspMailList.Service
 {
     class Program
     {
+        private static string PathLog
+        {
+            get
+            {
+                string directory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "log");
+                if (!System.IO.Directory.Exists(directory))
+                    System.IO.Directory.CreateDirectory(directory);
+                return directory;
+            }
+        }
+
         private static object lockObject = new object();
         public static void WriteLine(string value)
         {
             lock (lockObject)  // all other threads will wait for y
             {
                 Console.WriteLine(value);
-                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -32,7 +43,7 @@ namespace AspMailList.Service
             {
 
                 Console.WriteLine(value);
-                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -98,9 +109,10 @@ namespace AspMailList.Service
                     ThreadCampanha = new List<myThreadCampanha>();
                     foreach (var campanha in listCampanha)
                     {
-                        myThreadCampanha threadcamp = new myThreadCampanha(campanha);
+                        myThreadCampanha threadcamp = new myThreadCampanha(campanha, PathLog);
+                        threadcamp.WriteLine("Iniciando a Campanha " + campanha.DisplayName);
                         ThreadCampanha.Add(threadcamp);
-
+                        
                         WriteLine("Iniciando a Campanha: " + threadcamp.Campanha.DisplayName + " - ID: " + threadcamp.Campanha.id);
                         Thread threadCampanhaHelp = new Thread(new ParameterizedThreadStart(ExecutarCampanhaHelps));
                         threadCampanhaHelp.IsBackground = true;
@@ -236,17 +248,80 @@ namespace AspMailList.Service
         private long CountSubscribeTotal = 0;
         private long CountUnsubscribeTotal = 0;
         private long CountSubscribeTotalErros = 0;
+        private List<string> Erros = new List<string>();
         private static object lockObject = new object();
+        private string PathLogExecutable = "C:\\";
+        private long CountErroTotalErrosLimite = 0;
+
+        private string PathLog
+        {
+            get
+            {
+                if (!System.IO.Directory.Exists(System.IO.Path.Combine(PathLogExecutable, IdCampanha.ToString())))
+                    System.IO.Directory.CreateDirectory(System.IO.Path.Combine(PathLogExecutable, IdCampanha.ToString()));
+                return System.IO.Path.Combine(PathLogExecutable, IdCampanha.ToString());
+            }
+        }
+
+        private int IdCampanha
+        {
+            get
+            {
+                if (Campanha != null)
+                    return Campanha.id;
+                else
+                    return 0;
+            }
+        }
+
         #endregion
+
+        /// <summary>
+        /// Recuperar o log de erros.
+        /// </summary>
+        public string ErrosCampanhaHoje {
+            get
+            {
+                lock (lockObject)  // all other threads will wait for y
+                {
+                    using (var lockStreamReader = new StreamReader(PathLog + "\\log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                    {
+                        return lockStreamReader.ReadToEnd().Replace(Environment.NewLine, "<br/>" + Environment.NewLine);
+                    }
+                }
+            }
+        }
+
+        public string ErrosCampanhaTodos
+        {
+            get
+            {
+                lock (lockObject)  // all other threads will wait for y
+                {
+
+                    string[] files = System.IO.Directory.GetFiles(PathLog, "*.txt");
+                    StringBuilder sb = new StringBuilder();
+                    foreach (string file in files)
+                    {
+                        using (var lockStreamReader = new StreamReader(file, true))
+                        {
+                            sb.AppendLine(lockStreamReader.ReadToEnd().Replace(Environment.NewLine, "<br/>"));
+                        }
+                    }
+                    return sb.ToString();
+                }
+            }
+        }
+
         private AspMailList.library.Pop3 pop { get; set; }
-        private void WriteLine(string value)
+        public void WriteLine(string value)
         {
             lock (lockObject)  // all other threads will wait for y
             {
                 if (Debug)
                     Console.WriteLine(value);
 
-                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -260,7 +335,7 @@ namespace AspMailList.Service
                 if (Debug)
                     Console.WriteLine(value);
 
-                using (var lockStreamWriter = new StreamWriter("log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -296,7 +371,14 @@ namespace AspMailList.Service
         } 
         public int TimeSleep { get; set; }
         public Mala_Direta_Campanha Campanha { get; set; }
-        public myThreadCampanha(Mala_Direta_Campanha campamha) { Campanha = campamha; TimeSleep = 60000; pop = new AspMailList.library.Pop3(); Debug = false; }
+        public myThreadCampanha(Mala_Direta_Campanha campamha, string pathExecutableLog) 
+        { 
+            Campanha = campamha;
+            PathLogExecutable = pathExecutableLog;
+            TimeSleep = 60000; 
+            pop = new AspMailList.library.Pop3(); 
+            Debug = false; 
+        }
         public void ProcessarEmail()
         {
             try
@@ -430,6 +512,7 @@ namespace AspMailList.Service
                            || l.Headers.Subject.ToLower().Trim().IndexOf("ausência") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("out of office") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("non remis") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("not found") >= 0
                            select l).ToList();
 
                     if (Debug)
@@ -504,8 +587,15 @@ namespace AspMailList.Service
                     WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message);
                 else
                 {
+                    CountErroTotalErrosLimite++;
                     WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message, ex);
-                    Thread.Sleep(TimeSleep);
+                    Thread.Sleep(60000);
+                    if (CountErroTotalErrosLimite >= 10)
+                    {
+                        WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: Muitos erros, aguardando " + TimeSleep + " segundos para o proximo processamento." );
+                        CountErroTotalErrosLimite = 0;
+                        Thread.Sleep(TimeSleep);
+                    }
                 }
             }
         }
@@ -575,6 +665,8 @@ namespace AspMailList.Service
                            || l.Headers.Subject.ToLower().Trim().IndexOf("count") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("info") >= 0
                            || l.Headers.Subject.ToLower().Trim().IndexOf("command") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("error") >= 0
+                           || l.Headers.Subject.ToLower().Trim().IndexOf("erros") >= 0
                            select l).ToList();
 
                     if (Debug)
@@ -773,6 +865,31 @@ namespace AspMailList.Service
 
                             #endregion
                         }
+                        else if (Subject.IndexOf("error") >= 0 || Subject.IndexOf("erros") >= 0)
+                        {
+                            #region Erros
+                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
+
+                            AspMailList.library.Smtp smtp = new library.Smtp();
+                            smtp.Subject = "Informações sobre os erros desta lista";
+                            smtp.To = sfrom;
+                            smtp.EnableSsl = Campanha.EnableSsl;
+                            smtp.From = Campanha.SmtpUser;
+                            smtp.Password = Campanha.SmtpPassword;
+                            smtp.User = Campanha.SmtpUser;
+                            smtp.Port = Campanha.SmtpPort.ToString();
+                            smtp.SmtpServer = Campanha.SmtpServer;
+                            smtp.DisplayName = Campanha.DisplayName + " - Info";
+                            if (Subject.IndexOf("todos") >= 0 || Subject.IndexOf("all") >= 0)
+                                smtp.Body = this.ErrosCampanhaTodos;
+                            else
+                                smtp.Body = this.ErrosCampanhaHoje;
+                            smtp.EnviarEmail();
+
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                            WriteLine("ID " + Campanha.id + " - Solicitou as informações de erros para: " + sfrom);
+                            #endregion
+                        }
                     }
                 }
             }
@@ -813,7 +930,8 @@ namespace AspMailList.Service
                     sb.AppendLine("<br>Você acabou de entrar no grupo da lista.");
                 else
                     sb.AppendLine("<br>Você acabou de sair no grupo da lista.");
-            }else
+            }
+            else
                 sb.AppendLine("<br>Comandos da Lista.");
             sb.AppendLine("<br>");
             sb.AppendLine("<br>List-Help: <a href='mailto:" + Campanha.SmtpUser + "?subject=Help'>" + Campanha.SmtpUser + "?subject=Help</a>");
@@ -821,12 +939,13 @@ namespace AspMailList.Service
                 sb.AppendLine("<br>List-Unsubscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=Unsubscribe'>" + Campanha.SmtpUser + "?subject=Unsubscribe</a>");
             else
                 sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=Subscribe'>" + Campanha.SmtpUser + "?subject=Subscribe</a>");
-            
+
             if (command)
             {
-                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=info'>" + Campanha.SmtpUser + "?subject=info</a> Recupera as informações de Status");
-                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=add'>" + Campanha.SmtpUser + "?subject=add</a> Adiciona os email do corpo na lista" );
-                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=remove'>" + Campanha.SmtpUser + "?subject=remove</a> Remova os email do corpo na lista");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=info'>" + Campanha.SmtpUser + "?subject=info</a> Recupera as informações de Status.");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=add'>" + Campanha.SmtpUser + "?subject=add</a> Adiciona os email do corpo na lista.");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=remove'>" + Campanha.SmtpUser + "?subject=remove</a> Remova os email do corpo na lista.");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=error'>" + Campanha.SmtpUser + "?subject=error</a> Informações sobre os erros ocorridos.");
             }
             sb.AppendLine("<br>");
             sb.AppendLine("<br>Obrigado.<br>");
