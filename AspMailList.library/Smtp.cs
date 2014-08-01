@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -168,12 +167,15 @@ namespace AspMailList.library
                 UseCredentials = true;
                 if (string.IsNullOrEmpty(Password) || string.IsNullOrEmpty(User))
                     UseCredentials = false;
-#if !MONO
-                if (UseCredentials)
-                    smtp.UseDefaultCredentials = false;
-                else
-                    smtp.UseDefaultCredentials = true;
-#endif
+                
+                if (!CoreAssembly.IsRunningOnMono())
+                {
+                    if (UseCredentials)
+                        smtp.UseDefaultCredentials = false;
+                    else
+                        smtp.UseDefaultCredentials = true;
+                }
+
                 if (UseCredentials)
                     smtp.Credentials = Credential;
 
@@ -187,9 +189,9 @@ namespace AspMailList.library
                     mail.Body = Body + getRodape(User);
                     mail.IsBodyHtml = true;
                     mail.Priority = MailPriority.Normal;
-                    
-                    mail.BodyEncoding = Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage);
-                    mail.SubjectEncoding = Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage);
+
+                    mail.BodyEncoding = Encoding.GetEncoding("ISO-8859-1");
+                    mail.SubjectEncoding = Encoding.GetEncoding("ISO-8859-1");
                     //Preventing gmail to mark our mails as spam
                     mail.Headers.Add("X-Company", DisplayName);
                     mail.Headers.Add("X-Location", "Brazil");
@@ -208,7 +210,7 @@ namespace AspMailList.library
                     string dominio = From.Trim().ToLower().Split('@')[1];
                     mail.Headers.Add("Message-Id", String.Concat("<", DateTime.Now.ToString("yyyyMMdd"), ".", DateTime.Now.ToString("HHmmss"), "@", dominio, ">"));
 
-                    mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(Body, Encoding.GetEncoding(CultureInfo.GetCultureInfo("pt-BR").TextInfo.ANSICodePage), "text/html"));
+                    mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(Body, Encoding.GetEncoding("ISO-8859-1"), "text/html"));
 
                     foreach (string file in LstFile)
                     {

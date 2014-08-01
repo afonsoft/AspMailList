@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AspMailList.library
@@ -15,9 +16,17 @@ namespace AspMailList.library
         public static readonly Assembly Reference = typeof(CoreAssembly).Assembly;
         public static readonly Version Version = Reference.GetName().Version;
 
+        private static bool _IsRunningOnMono = (Type.GetType("Mono.Runtime") != null);
+        private static bool _IsRunningOnWindows = RuntimeEnvironment.GetRuntimeDirectory().Contains("Microsoft");
+
         public static bool IsRunningOnMono()
         {
-            return Type.GetType("Mono.Runtime") != null;
+            if (_IsRunningOnMono)
+                return true;
+            else if (_IsRunningOnWindows)
+                return false;
+            else
+                return true;
         }
 
         /// <summary>
