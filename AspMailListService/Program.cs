@@ -30,7 +30,7 @@ namespace AspMailList.Service
             lock (lockObject)  // all other threads will wait for y
             {
                 Console.WriteLine(value);
-                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(Path.Combine(PathLog, "log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -43,7 +43,7 @@ namespace AspMailList.Service
             {
 
                 Console.WriteLine(value);
-                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(Path.Combine(PathLog, "log-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -64,7 +64,6 @@ namespace AspMailList.Service
         }
         public static List<Thread> Threads { get; set; }
         public static List<myThreadCampanha> ThreadCampanha { get; set; }
-
         private static List<string> _emails = null;
         public static List<string> Emails
         {
@@ -77,14 +76,12 @@ namespace AspMailList.Service
         }
 
         public static Boolean isRunnig = true;
-
         static void OnProcessExit(object sender, EventArgs e)
         {
             WriteLine("");
             WriteLine("Finalizando AspMailList");
             isRunnig = false;
         }
-
         static void Main(string[] args)
         {
             try
@@ -92,6 +89,7 @@ namespace AspMailList.Service
                 WriteLine("Iniciando AspMailList");
                 WriteLine("Versão Aplicação: " + FileVersionInfo.GetVersionInfo(typeof(Program).Assembly.Location).FileVersion + " - " + typeof(Program).Assembly.GetName().Version.ToString());
                 WriteLine("Versão biblioteca: " + CoreAssembly.getFileVersion + " - " + CoreAssembly.getVersion);
+                WriteLine("Sistema: " + (CoreAssembly.IsRunningOnMono() ? "Mono" : "CLR"));
                 WriteLine("Pressine Q para Sair. (Press Q for Exit)");
                 WriteLine("Pressine D para Debug. (Press D for Debug)");
                 WriteLine("Pressine I para Informações. (Press I for information)");
@@ -189,7 +187,6 @@ namespace AspMailList.Service
                 Console.ReadKey();
             }
         }
-
         private static void ExecutarCampanhaEnvioEmail(object _myThreadCampanha)
         {
             myThreadCampanha threadCampanha = (myThreadCampanha)_myThreadCampanha;
@@ -252,7 +249,6 @@ namespace AspMailList.Service
         private static object lockObject = new object();
         private string PathLogExecutable = "C:\\";
         private long CountErroTotalErrosLimite = 0;
-
         private string PathLog
         {
             get
@@ -262,7 +258,6 @@ namespace AspMailList.Service
                 return System.IO.Path.Combine(PathLogExecutable, IdCampanha.ToString());
             }
         }
-
         private int IdCampanha
         {
             get
@@ -273,9 +268,7 @@ namespace AspMailList.Service
                     return 0;
             }
         }
-
         #endregion
-
         /// <summary>
         /// Recuperar o log de erros.
         /// </summary>
@@ -284,14 +277,13 @@ namespace AspMailList.Service
             {
                 lock (lockObject)  // all other threads will wait for y
                 {
-                    using (var lockStreamReader = new StreamReader(PathLog + "\\log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                    using (var lockStreamReader = new StreamReader(Path.Combine(PathLog,  "log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
                     {
                         return lockStreamReader.ReadToEnd().Replace(Environment.NewLine, "<br/>" + Environment.NewLine);
                     }
                 }
             }
-        }
-
+        } 
         public string ErrosCampanhaTodos
         {
             get
@@ -312,7 +304,6 @@ namespace AspMailList.Service
                 }
             }
         }
-
         private AspMailList.library.Pop3 pop { get; set; }
         public void WriteLine(string value)
         {
@@ -321,7 +312,7 @@ namespace AspMailList.Service
                 if (Debug)
                     Console.WriteLine(value);
 
-                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(Path.Combine(PathLog, "log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -335,7 +326,7 @@ namespace AspMailList.Service
                 if (Debug)
                     Console.WriteLine(value);
 
-                using (var lockStreamWriter = new StreamWriter(PathLog + "\\log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt", true))
+                using (var lockStreamWriter = new StreamWriter(Path.Combine(PathLog, "log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
                 {
                     lockStreamWriter.Write(DateTime.Now.ToString("HH:mm:ss") + ": " + value);
                     lockStreamWriter.Write(Environment.NewLine);
@@ -393,8 +384,9 @@ namespace AspMailList.Service
                     db.ObjectTrackingEnabled = false;
                     if (!CoreAssembly.IsRunningOnMono())
                         db.CommandTimeout = db.Connection.ConnectionTimeout;
-                    Emails = db.Sp_camanha_email_nao_enviado(Campanha.id).ToList();
-                    //LER DE 5000 EM 5000 E-MAILS
+                    //LER DE 2000 EM 2000 E-MAILS
+                    var emails = db.Sp_camanha_email_nao_enviado(Campanha.id);
+                    Emails = (from e in emails select e).ToList();
                 }
                 CountEnvioTotal += Emails.Count;
 
@@ -550,6 +542,9 @@ namespace AspMailList.Service
                         {
                             using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                             {
+                                if (!CoreAssembly.IsRunningOnMono())
+                                    db.CommandTimeout = db.Connection.ConnectionTimeout;
+
                                 var optDelete = (from m in db.Mala_Diretas
                                                  where emails.Contains(m.email)
                                                  select m);
@@ -709,6 +704,9 @@ namespace AspMailList.Service
                                 CountSubscribeTotal++;
                                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                                 {
+                                    if (!CoreAssembly.IsRunningOnMono())
+                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
+
                                     db.Mala_Direta_add_Email(sfrom);
                                     db.SubmitChanges();
                                 }
@@ -717,6 +715,9 @@ namespace AspMailList.Service
                             {
                                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                                 {
+                                    if (!CoreAssembly.IsRunningOnMono())
+                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
+
                                     var optdelete = (from m in db.Mala_Diretas
                                                      where m.email == sfrom
                                                      select m);
@@ -771,6 +772,9 @@ namespace AspMailList.Service
                                 CountSubscribeTotal++;
                                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                                 {
+                                    if (!CoreAssembly.IsRunningOnMono())
+                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
+
                                     db.Mala_Direta_add_Email(sfrom);
                                     db.SubmitChanges();
                                 }
@@ -791,6 +795,9 @@ namespace AspMailList.Service
 
                             using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                             {
+                                if (!CoreAssembly.IsRunningOnMono())
+                                    db.CommandTimeout = db.Connection.ConnectionTimeout;
+
                                 var optDelete = (from m in db.Mala_Diretas
                                                  where emails.Contains(m.email)
                                                  select m);
