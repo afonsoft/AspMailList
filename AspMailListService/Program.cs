@@ -385,8 +385,7 @@ namespace AspMailList.Service
                     if (!CoreAssembly.IsRunningOnMono())
                         db.CommandTimeout = db.Connection.ConnectionTimeout;
                     //LER DE 2000 EM 2000 E-MAILS
-                    var emails = db.Sp_camanha_email_nao_enviado(Campanha.id);
-                    Emails = (from e in emails select e).ToList();
+                    Emails = db.Sp_camanha_email_nao_enviado(Campanha.id).ToList(); 
                 }
                 CountEnvioTotal += Emails.Count;
 
