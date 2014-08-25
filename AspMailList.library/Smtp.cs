@@ -27,7 +27,6 @@ namespace AspMailList.library
         private string _Port = "25";
         private bool _EnableSsl = false;
         private List<string> LstFile = new List<string>();
-        private NetworkCredential _Credential = null;
         #endregion
 
         #region Get and Set
@@ -35,11 +34,8 @@ namespace AspMailList.library
         {
             get
             {
-                if (_Credential == null)
-                    _Credential = new NetworkCredential(User, Password);
-                return _Credential;
+                return new NetworkCredential(User, Password);
             }
-            set { _Credential = value; }
         }
 
         public string Port

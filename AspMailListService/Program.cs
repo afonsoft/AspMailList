@@ -232,6 +232,16 @@ namespace AspMailList.Service
             }
         }
     }
+
+    public class SmtpMails
+    {
+        public int idCamapnha { get; set; }
+        public string SmtpUser { get; set; }
+        public string SmtpPassword { get; set; }
+        public bool isEror { get; set; }
+        public int Timeout { get; set; }
+        public int Errocount { get; set; }
+    }
     public class myThreadCampanha
     {
         #region Private var
@@ -362,20 +372,63 @@ namespace AspMailList.Service
         } 
         public int TimeSleep { get; set; }
         public Mala_Direta_Campanha Campanha { get; set; }
+        public List<SmtpMails> lstSmtpMails { get; set; }
+
+        private SmtpMails getDisponivel()
+        {
+            SmtpMails item = (from s in lstSmtpMails
+                              orderby s.Timeout descending
+                              where s.isEror == false
+                              select s).FirstOrDefault();
+
+            if (item == null)
+            {
+                item = (from s in lstSmtpMails
+                        orderby s.Timeout descending
+                        select s).FirstOrDefault();
+            }
+
+            return item;
+        }
+
         public myThreadCampanha(Mala_Direta_Campanha campamha, string pathExecutableLog) 
         { 
             Campanha = campamha;
             PathLogExecutable = pathExecutableLog;
             TimeSleep = 60000; 
             pop = new AspMailList.library.Pop3(); 
-            Debug = false; 
+            Debug = false;
+
+            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+            {
+                lstSmtpMails = (from s in db.Mala_Direta_Campanha_Smtp_Mails
+                                where s.idCamapnha == campamha.id
+                                select new SmtpMails
+                                {
+                                    idCamapnha = s.idCamapnha,
+                                    isEror = false,
+                                    Timeout = 60000,
+                                    SmtpUser = s.SmtpUser,
+                                    SmtpPassword = s.SmtpPassword
+                                }).ToList();
+
+                lstSmtpMails.Add(new SmtpMails()
+                {
+                    idCamapnha = campamha.id,
+                    isEror = false,
+                    Timeout = 60000,
+                    SmtpUser = campamha.SmtpUser,
+                    SmtpPassword = campamha.SmtpPassword
+                });
+            }
+
         }
         public void ProcessarEmail()
         {
+
             try
             {
                 int enviado = 0;
-                int Errocount = 0;
                 int totalEnvio = 0;
 
                 List<Sp_camanha_email_nao_enviadoResult> Emails = new List<Sp_camanha_email_nao_enviadoResult>();
@@ -397,21 +450,23 @@ namespace AspMailList.Service
                 mail.EnableSsl = Campanha.EnableSsl;
                 mail.DisplayName = Campanha.DisplayName;
                 mail.From = Campanha.SmtpUser;
-                mail.Password = Campanha.SmtpPassword;
                 mail.Port = Campanha.SmtpPort.ToString();
                 mail.SmtpServer = Campanha.SmtpServer;
                 mail.UseCredentials = true;
-                mail.User = Campanha.SmtpUser;
-
+                
                 foreach (Sp_camanha_email_nao_enviadoResult md in Emails)
                 {
                     totalEnvio++;
 
                     mail.To = md.email.Replace("\t", "").Replace("\r", "").Replace("\n", "");
+                    SmtpMails smtpserver = getDisponivel();
                     try
                     {
+                        mail.User = smtpserver.SmtpUser;
+                        mail.Password = smtpserver.SmtpPassword;
                         mail.EnviarEmail();
                         enviado++;
+                        
 
                         if (Debug)
                             WriteLine("ID " + Campanha.id + " - Enviados: " + totalEnvio + " de " + Emails.Count + " - Email enviado: " + mail.To);
@@ -430,11 +485,12 @@ namespace AspMailList.Service
                             db.SubmitChanges();
                         }
                         CountEnvioSucesso++;
-                        Errocount = 0;
-                        if (enviado >= 25)
+                        smtpserver.isEror = false;
+                        smtpserver.Errocount = 0;
+                        if (enviado >= 100)
                         {
                             enviado = 0;
-                            System.Threading.Thread.Sleep(10000); //Esperar 10 seg. apos o envio de 25;
+                            System.Threading.Thread.Sleep(5000); //Esperar 5 seg. apos o envio de 100;
                         }
                     }
 
@@ -443,20 +499,21 @@ namespace AspMailList.Service
                         WriteLine("ID " + Campanha.id + " - Enviados " + totalEnvio + " emails.");
                         CountEnvioErro++;
                         TimeSleep = 60000;
+                        smtpserver.Timeout = TimeSleep;
+                        smtpserver.isEror = true;
                         if (ex.Message.Contains("too many messages"))
                         {
                             WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id));
-                            Errocount++;
-                            TimeSleep = 900000 * Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
+                            smtpserver.Errocount++;
+                            smtpserver.Timeout = 900000 * smtpserver.Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
                         else
                         {
                             WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id), ex);
-                            TimeSleep = 60000; //Qualquer erro esperar 1 minuto.
                         }
 
                         WriteLine(string.Format("ID {1} - Esperando {0} segundos para tentar novamente.", TimeSleep, Campanha.id));
-                        System.Threading.Thread.Sleep(TimeSleep);
+                        System.Threading.Thread.Sleep(smtpserver.Timeout);
                     }
                 }
             }
@@ -583,7 +640,7 @@ namespace AspMailList.Service
                 {
                     CountErroTotalErrosLimite++;
                     WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message, ex);
-                    Thread.Sleep(60000);
+                    Thread.Sleep(30000);
                     if (CountErroTotalErrosLimite >= 10)
                     {
                         WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: Muitos erros, aguardando " + TimeSleep + " segundos para o proximo processamento." );

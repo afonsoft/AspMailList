@@ -42,6 +42,9 @@ namespace AspMailList.Service
     partial void InsertMala_Direta_Campanha_Enviado(Mala_Direta_Campanha_Enviado instance);
     partial void UpdateMala_Direta_Campanha_Enviado(Mala_Direta_Campanha_Enviado instance);
     partial void DeleteMala_Direta_Campanha_Enviado(Mala_Direta_Campanha_Enviado instance);
+    partial void InsertMala_Direta_Campanha_Smtp_Mail(Mala_Direta_Campanha_Smtp_Mail instance);
+    partial void UpdateMala_Direta_Campanha_Smtp_Mail(Mala_Direta_Campanha_Smtp_Mail instance);
+    partial void DeleteMala_Direta_Campanha_Smtp_Mail(Mala_Direta_Campanha_Smtp_Mail instance);
     #endregion
 		
 		public dbMalaDiretaDataContext() : 
@@ -103,6 +106,14 @@ namespace AspMailList.Service
 			get
 			{
 				return this.GetTable<Mala_Direta_Campanha_Enviado>();
+			}
+		}
+		
+		public System.Data.Linq.Table<Mala_Direta_Campanha_Smtp_Mail> Mala_Direta_Campanha_Smtp_Mails
+		{
+			get
+			{
+				return this.GetTable<Mala_Direta_Campanha_Smtp_Mail>();
 			}
 		}
 		
@@ -572,6 +583,8 @@ namespace AspMailList.Service
 		
 		private EntitySet<Mala_Direta_Campanha_Enviado> _Mala_Direta_Campanha_Enviados;
 		
+		private EntitySet<Mala_Direta_Campanha_Smtp_Mail> _Mala_Direta_Campanha_Smtp_Mails;
+		
     #region Extensibility Method Definitions
     partial void OnLoaded();
     partial void OnValidate(System.Data.Linq.ChangeAction action);
@@ -610,6 +623,7 @@ namespace AspMailList.Service
 		{
 			this._Mala_Direta_Campanha_Unsubscribes = new EntitySet<Mala_Direta_Campanha_Unsubscribe>(new Action<Mala_Direta_Campanha_Unsubscribe>(this.attach_Mala_Direta_Campanha_Unsubscribes), new Action<Mala_Direta_Campanha_Unsubscribe>(this.detach_Mala_Direta_Campanha_Unsubscribes));
 			this._Mala_Direta_Campanha_Enviados = new EntitySet<Mala_Direta_Campanha_Enviado>(new Action<Mala_Direta_Campanha_Enviado>(this.attach_Mala_Direta_Campanha_Enviados), new Action<Mala_Direta_Campanha_Enviado>(this.detach_Mala_Direta_Campanha_Enviados));
+			this._Mala_Direta_Campanha_Smtp_Mails = new EntitySet<Mala_Direta_Campanha_Smtp_Mail>(new Action<Mala_Direta_Campanha_Smtp_Mail>(this.attach_Mala_Direta_Campanha_Smtp_Mails), new Action<Mala_Direta_Campanha_Smtp_Mail>(this.detach_Mala_Direta_Campanha_Smtp_Mails));
 			OnCreated();
 		}
 		
@@ -919,6 +933,19 @@ namespace AspMailList.Service
 			}
 		}
 		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Smtp_Mail", Storage="_Mala_Direta_Campanha_Smtp_Mails", ThisKey="id", OtherKey="idCamapnha")]
+		public EntitySet<Mala_Direta_Campanha_Smtp_Mail> Mala_Direta_Campanha_Smtp_Mails
+		{
+			get
+			{
+				return this._Mala_Direta_Campanha_Smtp_Mails;
+			}
+			set
+			{
+				this._Mala_Direta_Campanha_Smtp_Mails.Assign(value);
+			}
+		}
+		
 		public event PropertyChangingEventHandler PropertyChanging;
 		
 		public event PropertyChangedEventHandler PropertyChanged;
@@ -958,6 +985,18 @@ namespace AspMailList.Service
 		}
 		
 		private void detach_Mala_Direta_Campanha_Enviados(Mala_Direta_Campanha_Enviado entity)
+		{
+			this.SendPropertyChanging();
+			entity.Mala_Direta_Campanha = null;
+		}
+		
+		private void attach_Mala_Direta_Campanha_Smtp_Mails(Mala_Direta_Campanha_Smtp_Mail entity)
+		{
+			this.SendPropertyChanging();
+			entity.Mala_Direta_Campanha = this;
+		}
+		
+		private void detach_Mala_Direta_Campanha_Smtp_Mails(Mala_Direta_Campanha_Smtp_Mail entity)
 		{
 			this.SendPropertyChanging();
 			entity.Mala_Direta_Campanha = null;
@@ -1153,6 +1192,181 @@ namespace AspMailList.Service
 					else
 					{
 						this._idCampanha = default(int);
+					}
+					this.SendPropertyChanged("Mala_Direta_Campanha");
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="afonsoftcombr.Mala_Direta_Campanha_Smtp_Mail")]
+	public partial class Mala_Direta_Campanha_Smtp_Mail : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private int _id;
+		
+		private int _idCamapnha;
+		
+		private string _SmtpUser;
+		
+		private string _SmtpPassword;
+		
+		private EntityRef<Mala_Direta_Campanha> _Mala_Direta_Campanha;
+		
+    #region Extensibility Method Definitions
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnidChanging(int value);
+    partial void OnidChanged();
+    partial void OnidCamapnhaChanging(int value);
+    partial void OnidCamapnhaChanged();
+    partial void OnSmtpUserChanging(string value);
+    partial void OnSmtpUserChanged();
+    partial void OnSmtpPasswordChanging(string value);
+    partial void OnSmtpPasswordChanged();
+    #endregion
+		
+		public Mala_Direta_Campanha_Smtp_Mail()
+		{
+			this._Mala_Direta_Campanha = default(EntityRef<Mala_Direta_Campanha>);
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_id", AutoSync=AutoSync.OnInsert, DbType="Int NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
+		public int id
+		{
+			get
+			{
+				return this._id;
+			}
+			set
+			{
+				if ((this._id != value))
+				{
+					this.OnidChanging(value);
+					this.SendPropertyChanging();
+					this._id = value;
+					this.SendPropertyChanged("id");
+					this.OnidChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_idCamapnha", DbType="Int NOT NULL")]
+		public int idCamapnha
+		{
+			get
+			{
+				return this._idCamapnha;
+			}
+			set
+			{
+				if ((this._idCamapnha != value))
+				{
+					if (this._Mala_Direta_Campanha.HasLoadedOrAssignedValue)
+					{
+						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
+					}
+					this.OnidCamapnhaChanging(value);
+					this.SendPropertyChanging();
+					this._idCamapnha = value;
+					this.SendPropertyChanged("idCamapnha");
+					this.OnidCamapnhaChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SmtpUser", DbType="NVarChar(400) NOT NULL", CanBeNull=false)]
+		public string SmtpUser
+		{
+			get
+			{
+				return this._SmtpUser;
+			}
+			set
+			{
+				if ((this._SmtpUser != value))
+				{
+					this.OnSmtpUserChanging(value);
+					this.SendPropertyChanging();
+					this._SmtpUser = value;
+					this.SendPropertyChanged("SmtpUser");
+					this.OnSmtpUserChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SmtpPassword", DbType="NVarChar(400) NOT NULL", CanBeNull=false)]
+		public string SmtpPassword
+		{
+			get
+			{
+				return this._SmtpPassword;
+			}
+			set
+			{
+				if ((this._SmtpPassword != value))
+				{
+					this.OnSmtpPasswordChanging(value);
+					this.SendPropertyChanging();
+					this._SmtpPassword = value;
+					this.SendPropertyChanged("SmtpPassword");
+					this.OnSmtpPasswordChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Smtp_Mail", Storage="_Mala_Direta_Campanha", ThisKey="idCamapnha", OtherKey="id", IsForeignKey=true)]
+		public Mala_Direta_Campanha Mala_Direta_Campanha
+		{
+			get
+			{
+				return this._Mala_Direta_Campanha.Entity;
+			}
+			set
+			{
+				Mala_Direta_Campanha previousValue = this._Mala_Direta_Campanha.Entity;
+				if (((previousValue != value) 
+							|| (this._Mala_Direta_Campanha.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Mala_Direta_Campanha.Entity = null;
+						previousValue.Mala_Direta_Campanha_Smtp_Mails.Remove(this);
+					}
+					this._Mala_Direta_Campanha.Entity = value;
+					if ((value != null))
+					{
+						value.Mala_Direta_Campanha_Smtp_Mails.Add(this);
+						this._idCamapnha = value.id;
+					}
+					else
+					{
+						this._idCamapnha = default(int);
 					}
 					this.SendPropertyChanged("Mala_Direta_Campanha");
 				}
