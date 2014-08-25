@@ -384,7 +384,7 @@ namespace AspMailList.Service
             if (item == null)
             {
                 item = (from s in lstSmtpMails
-                        orderby s.Timeout descending
+                        orderby s.Timeout descending, s.Errocount ascending
                         select s).FirstOrDefault();
             }
 
@@ -499,7 +499,6 @@ namespace AspMailList.Service
                         WriteLine("ID " + Campanha.id + " - Enviados " + totalEnvio + " emails.");
                         CountEnvioErro++;
                         TimeSleep = 60000;
-                        smtpserver.Timeout = TimeSleep;
                         smtpserver.isEror = true;
                         if (ex.Message.Contains("too many messages"))
                         {
