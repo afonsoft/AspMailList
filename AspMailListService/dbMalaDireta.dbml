@@ -38,6 +38,7 @@
       <Column Name="Enabled" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
       <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Unsubscribe" Member="Mala_Direta_Campanha_Unsubscribes" ThisKey="id" OtherKey="idCampanha" Type="Mala_Direta_Campanha_Unsubscribe" />
       <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha_Enviados" ThisKey="id" OtherKey="idCampanha" Type="Mala_Direta_Campanha_Enviado" />
+      <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Smtp_Mail" Member="Mala_Direta_Campanha_Smtp_Mails" ThisKey="id" OtherKey="idCamapnha" Type="Mala_Direta_Campanha_Smtp_Mail" />
     </Type>
   </Table>
   <Table Name="afonsoftcombr.Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha_Enviados">
@@ -48,6 +49,15 @@
       <Column Name="dtEnvio" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
       <Association Name="Mala_Direta_Mala_Direta_Campanha_Enviado" Member="Mala_Direta" ThisKey="idMail" OtherKey="id" Type="Mala_Direta" IsForeignKey="true" />
       <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Enviado" Member="Mala_Direta_Campanha" ThisKey="idCampanha" OtherKey="id" Type="Mala_Direta_Campanha" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="afonsoftcombr.Mala_Direta_Campanha_Smtp_Mail" Member="Mala_Direta_Campanha_Smtp_Mails">
+    <Type Name="Mala_Direta_Campanha_Smtp_Mail">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="idCamapnha" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SmtpUser" Type="System.String" DbType="NVarChar(400) NOT NULL" CanBeNull="false" />
+      <Column Name="SmtpPassword" Type="System.String" DbType="NVarChar(400) NOT NULL" CanBeNull="false" />
+      <Association Name="Mala_Direta_Campanha_Mala_Direta_Campanha_Smtp_Mail" Member="Mala_Direta_Campanha" ThisKey="idCamapnha" OtherKey="id" Type="Mala_Direta_Campanha" IsForeignKey="true" />
     </Type>
   </Table>
   <Function Name="afonsoftcombr.Sp_camanha_email_nao_enviado" Method="Sp_camanha_email_nao_enviado">
