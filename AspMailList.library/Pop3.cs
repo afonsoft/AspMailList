@@ -88,7 +88,14 @@ namespace AspMailList.library
             // Most servers give the latest message the highest number
             for (int i = messageCount; i > 0; i--)
             {
-                allMessages.Add(client.GetMessage(i));
+                try
+                {
+                    allMessages.Add(client.GetMessage(i));
+                }
+                catch (Exception) 
+                {
+                    //Ignorar
+                }
             }
 
             // Now return the fetched messages

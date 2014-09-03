@@ -189,9 +189,13 @@ namespace AspMailList.library
                     mail.BodyEncoding = Encoding.GetEncoding("ISO-8859-1");
                     mail.SubjectEncoding = Encoding.GetEncoding("ISO-8859-1");
                     //Preventing gmail to mark our mails as spam
+                    mail.Headers.Add("X-Spam-Status", "No, score=1.3");
+                    mail.Headers.Add("X-Spam-Flag", "No");
+                    mail.Headers.Add("X-Spam-Score", "-12");
+                    mail.Headers.Add("X-Spam-Level", "---");
+                    mail.Headers.Add("X-Spam-Bar", "-");
                     mail.Headers.Add("X-Company", DisplayName);
                     mail.Headers.Add("X-Location", "Brazil");
-                    mail.Headers.Add("x-spam-flag", "NO");
                     mail.Headers.Add("X-No-Archive", "YES");
                     mail.Headers.Add("X-Organization", DisplayName);
                     mail.Headers.Add("X-Unique-Id", GetUniqueKey(8));
