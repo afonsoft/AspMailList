@@ -373,7 +373,6 @@ namespace AspMailList.Service
         public int TimeSleep { get; set; }
         public Mala_Direta_Campanha Campanha { get; set; }
         public List<SmtpMails> lstSmtpMails { get; set; }
-
         private SmtpMails getDisponivel()
         {
             SmtpMails item = (from s in lstSmtpMails
@@ -390,7 +389,6 @@ namespace AspMailList.Service
 
             return item;
         }
-
         public myThreadCampanha(Mala_Direta_Campanha campamha, string pathExecutableLog) 
         { 
             Campanha = campamha;
@@ -498,7 +496,6 @@ namespace AspMailList.Service
                     {
                         WriteLine("ID " + Campanha.id + " - Enviados " + totalEnvio + " emails.");
                         CountEnvioErro++;
-                        TimeSleep = 60000;
                         smtpserver.isEror = true;
                         if (ex.Message.Contains("too many messages"))
                         {
@@ -506,12 +503,53 @@ namespace AspMailList.Service
                             smtpserver.Errocount++;
                             smtpserver.Timeout = 900000 * smtpserver.Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
+                        else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required"))
+                        {
+                            WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id));
+                            try
+                            {
+                                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                {
+                                    if (!CoreAssembly.IsRunningOnMono())
+                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
+
+                                    var optDelete = (from m in db.Mala_Diretas
+                                                     where m.email.Contains(md.email)
+                                                     select m);
+
+                                    foreach (var opt in optDelete)
+                                    {
+                                        var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                                           where m.idMail == opt.id
+                                                           select m);
+
+                                        db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
+                                        db.SubmitChanges();
+
+                                        var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                                                  where m.idMail == opt.id
+                                                                  select m);
+
+                                        db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                        db.SubmitChanges();
+                                    }
+
+                                    db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
+                                    db.SubmitChanges();
+                                }
+                            }
+                            catch (Exception) 
+                            { 
+                                //Ignorar o erro para deletar o e-mail.
+                            }
+                        }
                         else
                         {
                             WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id), ex);
                         }
 
                         WriteLine(string.Format("ID {1} - Esperando {0} segundos para tentar novamente.", TimeSleep, Campanha.id));
+                        TimeSleep = smtpserver.Timeout;
                         System.Threading.Thread.Sleep(smtpserver.Timeout);
                     }
                 }
@@ -526,7 +564,10 @@ namespace AspMailList.Service
             try
             {
                 string[] emails = new string[0];
-                using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
+                string server = Campanha.SmtpServer;
+                if (server == "127.0.0.1")
+                    server = Campanha.SmtpUser.Substring(Campanha.SmtpUser.IndexOf('@') + 1, Campanha.SmtpUser.Length - (Campanha.SmtpUser.IndexOf('@') + 1));
+                using (Pop3Client client = pop.pop3Client(server, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
                     List<Message> lst = pop.FetchAllMessages(client);
                     lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
@@ -653,7 +694,10 @@ namespace AspMailList.Service
         {
             try
             {
-                using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
+                string server = Campanha.SmtpServer;
+                if (server == "127.0.0.1")
+                    server = Campanha.SmtpUser.Substring(Campanha.SmtpUser.IndexOf('@') + 1, Campanha.SmtpUser.Length - (Campanha.SmtpUser.IndexOf('@') + 1));
+                using (Pop3Client client = pop.pop3Client(server, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
                     List<Message> lst = pop.FetchAllMessages(client);
                     lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
@@ -702,7 +746,10 @@ namespace AspMailList.Service
         {
             try
             {
-                using (Pop3Client client = pop.pop3Client(Campanha.SmtpServer, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
+                string server = Campanha.SmtpServer;
+                if (server == "127.0.0.1")
+                    server = Campanha.SmtpUser.Substring(Campanha.SmtpUser.IndexOf('@') + 1, Campanha.SmtpUser.Length - (Campanha.SmtpUser.IndexOf('@') + 1));
+                using (Pop3Client client = pop.pop3Client(server, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
                     List<Message> lst = pop.FetchAllMessages(client);
                     lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
