@@ -436,7 +436,7 @@ namespace AspMailList.Service
                     if (!CoreAssembly.IsRunningOnMono())
                         db.CommandTimeout = db.Connection.ConnectionTimeout;
                     //LER DE 2000 EM 2000 E-MAILS
-                    Emails = db.Sp_camanha_email_nao_enviado(Campanha.id).ToList(); 
+                    Emails = db.Sp_camanha_email_nao_enviado(Campanha.id).ToList();
                 }
                 CountEnvioTotal += Emails.Count;
 
@@ -451,7 +451,7 @@ namespace AspMailList.Service
                 mail.Port = Campanha.SmtpPort.ToString();
                 mail.SmtpServer = Campanha.SmtpServer;
                 mail.UseCredentials = true;
-                
+
                 foreach (Sp_camanha_email_nao_enviadoResult md in Emails)
                 {
                     totalEnvio++;
@@ -464,7 +464,7 @@ namespace AspMailList.Service
                         mail.Password = smtpserver.SmtpPassword;
                         mail.EnviarEmail();
                         enviado++;
-                        
+
 
                         if (Debug)
                             WriteLine("ID " + Campanha.id + " - Enviados: " + totalEnvio + " de " + Emails.Count + " - Email enviado: " + mail.To);
@@ -485,10 +485,10 @@ namespace AspMailList.Service
                         CountEnvioSucesso++;
                         smtpserver.isEror = false;
                         smtpserver.Errocount = 0;
-                        if (enviado >= 100)
+                        if (enviado >= 200)
                         {
                             enviado = 0;
-                            System.Threading.Thread.Sleep(5000); //Esperar 5 seg. apos o envio de 100;
+                            System.Threading.Thread.Sleep(5000); //Esperar 5 seg. apos o envio de 200;
                         }
                     }
 
@@ -506,8 +506,8 @@ namespace AspMailList.Service
                         else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required")
                                 || ex.Message.Contains("caractere inválido") || ex.Message.Contains("cabeçalho do email"))
                         {
-                            smtpserver.Timeout = 10000; //10 Segundos para processar o proximo e-mail.
-                            WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id));
+                            smtpserver.Timeout = 5000; //5 Segundos para processar o proximo e-mail.
+                            WriteLine("ID " + Campanha.id + " - Removido o e-mail " + md.email + " Erro: " + ex.Message);
                             try
                             {
                                 using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
@@ -540,8 +540,8 @@ namespace AspMailList.Service
                                     db.SubmitChanges();
                                 }
                             }
-                            catch (Exception) 
-                            { 
+                            catch (Exception)
+                            {
                                 //Ignorar o erro para deletar o e-mail.
                             }
                         }
@@ -550,7 +550,6 @@ namespace AspMailList.Service
                             WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id), ex);
                         }
 
-                        WriteLine(string.Format("ID {1} - Esperando {0} segundos para tentar novamente.", TimeSleep, Campanha.id));
                         TimeSleep = smtpserver.Timeout;
                         System.Threading.Thread.Sleep(smtpserver.Timeout);
                     }
