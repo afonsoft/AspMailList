@@ -503,8 +503,10 @@ namespace AspMailList.Service
                             smtpserver.Errocount++;
                             smtpserver.Timeout = 900000 * smtpserver.Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
-                        else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required"))
+                        else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required")
+                                || ex.Message.Contains("caractere inválido") || ex.Message.Contains("cabeçalho do email"))
                         {
+                            smtpserver.Timeout = 10000; //10 Segundos para processar o proximo e-mail.
                             WriteLine(string.Format("ID {2} - Destino: {0} - Erro: {1}", md.email, ex.Message, Campanha.id));
                             try
                             {
