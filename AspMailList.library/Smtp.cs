@@ -210,7 +210,7 @@ namespace AspMailList.library
                     string dominio = From.Trim().ToLower().Split('@')[1];
                     mail.Headers.Add("Message-Id", String.Concat("<", DateTime.Now.ToString("yyyyMMdd"), ".", DateTime.Now.ToString("HHmmss"), "@", dominio, ">"));
 
-                    mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(Body, Encoding.GetEncoding("ISO-8859-1"), "text/html"));
+                    mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(mail.Body, Encoding.GetEncoding("ISO-8859-1"), "text/html"));
 
                     foreach (string file in LstFile)
                     {
