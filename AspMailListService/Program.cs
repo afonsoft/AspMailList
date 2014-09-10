@@ -504,7 +504,8 @@ namespace AspMailList.Service
                             smtpserver.Timeout = 900000 * smtpserver.Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
                         else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required")
-                                || ex.Message.Contains("caractere inválido") || ex.Message.Contains("cabeçalho do email"))
+                                || ex.Message.Contains("caractere inválido") || ex.Message.Contains("cabeçalho do email")
+                                || ex.Message.Contains("inválido"))
                         {
                             smtpserver.Timeout = 5000; //5 Segundos para processar o proximo e-mail.
                             WriteLine("ID " + Campanha.id + " - Removido o e-mail " + md.email + " Erro: " + ex.Message);
@@ -570,105 +571,109 @@ namespace AspMailList.Service
                     server = Campanha.SmtpUser.Substring(Campanha.SmtpUser.IndexOf('@') + 1, Campanha.SmtpUser.Length - (Campanha.SmtpUser.IndexOf('@') + 1));
                 using (Pop3Client client = pop.pop3Client(server, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
-                    List<Message> lst = pop.FetchAllMessages(client);
-                    lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
 
-                    lst = (from l in lst
-                           where l.Headers.Subject.ToLower().Trim().IndexOf("mail delivery") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("failed") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("undelivered") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("postmaster") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("failure") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("undeliverable") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("não entregue") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("delivery failure") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("falha na entrega") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("não foi possível enviar") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("Returned mail") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("delivery problems") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("retorno de mensagem") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("returned mail") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("não é possível entregar") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("nao foi entregue") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("automática") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("automático") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("rejected") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("falha ao entregar") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("rejeitado") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("delivery status") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("devolvida") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("automatic") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("ausência") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("out of office") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("non remis") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("not found") >= 0
-                           select l).ToList();
-
-                    if (Debug)
-                        WriteLine("ID " + Campanha.id + " - Total de e-mail para remover: " + lst.Count);
-
-                    if (lst.Count == 0)
+                    int messageCount = client.GetMessageCount();
+                    if (messageCount == 0)
                         Thread.Sleep(TimeSleep);
 
-                    foreach (Message msg in lst)
+                    for (int i = messageCount; i > 0; i--)
                     {
-                        MessagePart msgpart = msg.FindFirstHtmlVersion();
-                        if (msgpart == null)
-                            msgpart = msg.FindFirstPlainTextVersion();
-                        if (msgpart == null)
-                            msgpart = msg.MessagePart;
-
-                        string Body = msgpart.GetBodyAsText();
-
-                        string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
-                        emails = (from e in femails
-                                  where !e.Contains(Campanha.SmtpServer)
-                                  && !e.Contains("=")
-                                  select e).ToArray();
-
-                        pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-
-                        if (msg.Headers.Subject.ToLower().Trim().IndexOf("automática") < 0 
-                            && msg.Headers.Subject.ToLower().Trim().IndexOf("automático") < 0 
-                            && msg.Headers.Subject.ToLower().Trim().IndexOf("spam") < 0 
-                            && msg.Headers.Subject.ToLower().Trim().IndexOf("delivery status") < 0
-                            && msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") < 0
-                            && msg.Headers.Subject.ToLower().Trim().IndexOf("automatic") < 0
-                            && msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") < 0 
-                            && emails.Count() > 0)
+                        Message msg = client.GetMessage(i);
+                        if (msg.Headers != null && !string.IsNullOrEmpty(msg.Headers.Subject))
                         {
-                            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                            if (msg.Headers.Subject.ToLower().Trim().IndexOf("mail delivery") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("failed") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("undelivered") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("postmaster") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("failure") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("undeliverable") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("não entregue") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("delivery failure") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("falha na entrega") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("não foi possível enviar") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("Returned mail") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("delivery problems") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("retorno de mensagem") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("returned mail") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("não é possível entregar") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("nao foi entregue") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("automática") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("automático") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("rejected") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("falha ao entregar") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("rejeitado") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("delivery status") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("devolvida") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("automatic") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("non remis") >= 0
+                                   || msg.Headers.Subject.ToLower().Trim().IndexOf("not found") >= 0)
                             {
-                                if (!CoreAssembly.IsRunningOnMono())
-                                    db.CommandTimeout = db.Connection.ConnectionTimeout;
 
-                                var optDelete = (from m in db.Mala_Diretas
-                                                 where emails.Contains(m.email)
-                                                 select m);
+                                MessagePart msgpart = msg.FindFirstHtmlVersion();
+                                if (msgpart == null)
+                                    msgpart = msg.FindFirstPlainTextVersion();
+                                if (msgpart == null)
+                                    msgpart = msg.MessagePart;
 
-                                foreach (var opt in optDelete)
+                                string Body = msgpart.GetBodyAsText();
+
+                                string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
+                                emails = (from e in femails
+                                          where !e.Contains(Campanha.SmtpServer)
+                                          && !e.Contains("=")
+                                          select e).ToArray();
+
+                                pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+
+                                if (msg.Headers.Subject.ToLower().Trim().IndexOf("automática") < 0
+                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("automático") < 0
+                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("spam") < 0
+                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("delivery status") < 0
+                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") < 0
+                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("automatic") < 0
+                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") < 0
+                                    && emails.Count() > 0)
                                 {
-                                    var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
-                                                       where m.idMail == opt.id
-                                                       select m);
+                                    using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                    {
+                                        if (!CoreAssembly.IsRunningOnMono())
+                                            db.CommandTimeout = db.Connection.ConnectionTimeout;
 
-                                    db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
-                                    db.SubmitChanges();
+                                        var optDelete = (from m in db.Mala_Diretas
+                                                         where emails.Contains(m.email)
+                                                         select m);
 
-                                    var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
-                                                              where m.idMail == opt.id
-                                                              select m);
+                                        foreach (var opt in optDelete)
+                                        {
+                                            var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                                               where m.idMail == opt.id
+                                                               select m);
 
-                                    db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
-                                    db.SubmitChanges();
+                                            db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
+                                            db.SubmitChanges();
+
+                                            var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                                                      where m.idMail == opt.id
+                                                                      select m);
+
+                                            db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                            db.SubmitChanges();
+                                        }
+
+                                        db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
+                                        db.SubmitChanges();
+                                    }
                                 }
-
-                                db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
-                                db.SubmitChanges();
+                                CountErroTotal++;
+                                WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
                             }
                         }
-                        CountErroTotal++;
-                        WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
+                        else
+                        {
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                        }
                     }
                 }
             }
@@ -676,7 +681,10 @@ namespace AspMailList.Service
             {
                 CountErroTotalErros++;
                 if (ex.Message.IndexOf("-ERR") >= 0)
+                {
+                    Thread.Sleep(5000);
                     WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: " + ex.Message);
+                }
                 else
                 {
                     CountErroTotalErrosLimite++;
@@ -684,7 +692,7 @@ namespace AspMailList.Service
                     Thread.Sleep(30000);
                     if (CountErroTotalErrosLimite >= 10)
                     {
-                        WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: Muitos erros, aguardando " + TimeSleep + " segundos para o proximo processamento." );
+                        WriteLine("ID " + Campanha.id + " - Tratamentos - Erros: Muitos erros, aguardando " + TimeSleep + " segundos para o proximo processamento.");
                         CountErroTotalErrosLimite = 0;
                         Thread.Sleep(TimeSleep);
                     }
@@ -700,21 +708,17 @@ namespace AspMailList.Service
                     server = Campanha.SmtpUser.Substring(Campanha.SmtpUser.IndexOf('@') + 1, Campanha.SmtpUser.Length - (Campanha.SmtpUser.IndexOf('@') + 1));
                 using (Pop3Client client = pop.pop3Client(server, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
-                    List<Message> lst = pop.FetchAllMessages(client);
-                    lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
+                    int messageCount = client.GetMessageCount();
+                    if (messageCount == 0)
+                        Thread.Sleep(TimeSleep);
 
-                    lst = (from l in lst
-                           where l.Headers.Subject.ToLower().Trim().IndexOf("help") >= 0
-                           select l).ToList();
-
-                    if (Debug)
-                        WriteLine("ID " + Campanha.id + " - Total de e-mail para ajuda: " + lst.Count);
-
-                    foreach (Message msg in lst)
+                    for (int i = messageCount; i > 0; i--)
                     {
-                        string Subject = msg.Headers.Subject.ToLower().Trim();
-                        if (Subject.IndexOf("help") >= 0)
+                        Message msg = client.GetMessage(i);
+
+                        if (msg.Headers!= null && !string.IsNullOrEmpty(msg.Headers.Subject) && msg.Headers.Subject.ToLower().Trim().IndexOf("help") >= 0)
                         {
+                            string Subject = msg.Headers.Subject.ToLower().Trim();
                             string from = msg.Headers.From.Address.ToString().ToLower().Trim();
                             AspMailList.library.Smtp smtp = new library.Smtp();
                             smtp.Subject = "Informações sobre a subscrição";
@@ -736,11 +740,13 @@ namespace AspMailList.Service
                         }
                     }
                 }
+                Thread.Sleep(5000);
             }
             catch (Exception ex)
             {
                 WriteLine("ID " + Campanha.id + " - Help - Erros: " + ex.Message, ex);
                 CountHelpTotalErros++;
+                Thread.Sleep(TimeSleep);
             }
         }
         public void ProcessarUnsubscribeAndSubscribe()
@@ -752,111 +758,38 @@ namespace AspMailList.Service
                     server = Campanha.SmtpUser.Substring(Campanha.SmtpUser.IndexOf('@') + 1, Campanha.SmtpUser.Length - (Campanha.SmtpUser.IndexOf('@') + 1));
                 using (Pop3Client client = pop.pop3Client(server, Campanha.PopPort, Campanha.EnableSsl, Campanha.SmtpUser, Campanha.SmtpPassword))
                 {
-                    List<Message> lst = pop.FetchAllMessages(client);
-                    lst = (from l in lst where l.Headers != null && !string.IsNullOrEmpty(l.Headers.Subject) select l).ToList();
+                    int messageCount = client.GetMessageCount();
+                    if (messageCount == 0)
+                        Thread.Sleep(TimeSleep);
 
-                    lst = (from l in lst
-                           where l.Headers.Subject.ToLower().Trim().IndexOf("subscribe") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("unsubscribe") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("add") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("remove") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("count") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("info") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("command") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("error") >= 0
-                           || l.Headers.Subject.ToLower().Trim().IndexOf("erros") >= 0
-                           select l).ToList();
-
-                    if (Debug)
-                        WriteLine("ID " + Campanha.id + " - Total de e-mail para Subscribe: " + lst.Count);
-
-                    foreach (Message msg in lst)
+                    for (int i = messageCount; i > 0; i--)
                     {
-
-                        string Subject = msg.Headers.Subject.ToLower().Trim();
-
-                        MessagePart msgpart = msg.FindFirstHtmlVersion();
-
-                        if (msgpart == null)
-                            msgpart = msg.FindFirstPlainTextVersion();
-                        if (msgpart == null)
-                            msgpart = msg.MessagePart;
-                        
-                        if (Subject.IndexOf("subscribe") >= 0 || Subject.IndexOf("unsubscribe") >= 0)
+                        Message msg = client.GetMessage(i);
+                        if (msg.Headers != null && !string.IsNullOrEmpty(msg.Headers.Subject))
                         {
-                            #region subscribe unsubscribe
-                            bool subscribe = Subject.IndexOf("unsubscribe") < 0 && Subject.IndexOf("subscribe") > 0;
-                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
-                            AspMailList.library.Smtp smtp = new library.Smtp();
-                            smtp.Subject = "Informações sobre a subscrição";
-                            smtp.To = sfrom;
-                            smtp.EnableSsl = Campanha.EnableSsl;
-                            smtp.From = Campanha.SmtpUser;
-                            smtp.Password = Campanha.SmtpPassword;
-                            smtp.User = Campanha.SmtpUser;
-                            smtp.Port = Campanha.SmtpPort.ToString();
-                            smtp.SmtpServer = Campanha.SmtpServer;
-                            smtp.DisplayName = Campanha.DisplayName;
-                            smtp.Body = getHelpBodyUnsubscribeAndSubscribe(subscribe);
-                            smtp.EnviarEmail();
-
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-
-                            if (subscribe)
+                            if (msg.Headers.Subject.ToLower().Trim().IndexOf("subscribe") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("unsubscribe") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("add") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("remove") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("count") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("info") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("command") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("error") >= 0
+                            || msg.Headers.Subject.ToLower().Trim().IndexOf("erros") >= 0)
                             {
-                                CountSubscribeTotal++;
-                                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                string Subject = msg.Headers.Subject.ToLower().Trim();
+                                MessagePart msgpart = msg.FindFirstHtmlVersion();
+
+                                if (msgpart == null)
+                                    msgpart = msg.FindFirstPlainTextVersion();
+                                if (msgpart == null)
+                                    msgpart = msg.MessagePart;
+
+                                if (Subject.IndexOf("subscribe") >= 0 || Subject.IndexOf("unsubscribe") >= 0)
                                 {
-                                    if (!CoreAssembly.IsRunningOnMono())
-                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
-
-                                    db.Mala_Direta_add_Email(sfrom);
-                                    db.SubmitChanges();
-                                }
-                            }
-                            else
-                            {
-                                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
-                                {
-                                    if (!CoreAssembly.IsRunningOnMono())
-                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
-
-                                    var optdelete = (from m in db.Mala_Diretas
-                                                     where m.email == sfrom
-                                                     select m);
-
-                                    foreach (var opt in optdelete)
-                                    {
-                                        Mala_Direta_Campanha_Unsubscribe m = new Mala_Direta_Campanha_Unsubscribe();
-                                        m.dtUnsubscribe = DateTime.Now;
-                                        m.idCampanha = Campanha.id;
-                                        m.idMail = opt.id;
-                                        db.Mala_Direta_Campanha_Unsubscribes.InsertOnSubmit(m);
-                                        db.SubmitChanges();
-                                    }
-                                }
-                                CountUnsubscribeTotal++;
-                            }
-                            WriteLine("ID " + Campanha.id + " - Enviando e-mail para " + sfrom + " com objetivo " + Subject);
-                            break;
-                            #endregion
-                        }
-                        else if (Subject.IndexOf("add") >= 0)
-                        {
-                            #region add
-                            string Body = msgpart.GetBodyAsText();
-                            string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
-                            string[] emails = (from e in femails
-                                               where !e.Contains(Campanha.SmtpServer)
-                                               && !e.Contains("=")
-                                               select e).ToArray();
-
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-
-                            foreach (string sfrom in emails)
-                            {
-                                try
-                                {
+                                    #region subscribe unsubscribe
+                                    bool subscribe = Subject.IndexOf("unsubscribe") < 0 && Subject.IndexOf("subscribe") > 0;
+                                    string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
                                     AspMailList.library.Smtp smtp = new library.Smtp();
                                     smtp.Subject = "Informações sobre a subscrição";
                                     smtp.To = sfrom;
@@ -867,146 +800,221 @@ namespace AspMailList.Service
                                     smtp.Port = Campanha.SmtpPort.ToString();
                                     smtp.SmtpServer = Campanha.SmtpServer;
                                     smtp.DisplayName = Campanha.DisplayName;
-                                    smtp.Body = getHelpBodyUnsubscribeAndSubscribe(true);
+                                    smtp.Body = getHelpBodyUnsubscribeAndSubscribe(subscribe);
                                     smtp.EnviarEmail();
-                                }
-                                catch { }
 
-                                CountSubscribeTotal++;
-                                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                    pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+
+                                    if (subscribe)
+                                    {
+                                        CountSubscribeTotal++;
+                                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                        {
+                                            if (!CoreAssembly.IsRunningOnMono())
+                                                db.CommandTimeout = db.Connection.ConnectionTimeout;
+
+                                            db.Mala_Direta_add_Email(sfrom);
+                                            db.SubmitChanges();
+                                        }
+                                    }
+                                    else
+                                    {
+                                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                        {
+                                            if (!CoreAssembly.IsRunningOnMono())
+                                                db.CommandTimeout = db.Connection.ConnectionTimeout;
+
+                                            var optdelete = (from m in db.Mala_Diretas
+                                                             where m.email == sfrom
+                                                             select m);
+
+                                            foreach (var opt in optdelete)
+                                            {
+                                                Mala_Direta_Campanha_Unsubscribe m = new Mala_Direta_Campanha_Unsubscribe();
+                                                m.dtUnsubscribe = DateTime.Now;
+                                                m.idCampanha = Campanha.id;
+                                                m.idMail = opt.id;
+                                                db.Mala_Direta_Campanha_Unsubscribes.InsertOnSubmit(m);
+                                                db.SubmitChanges();
+                                            }
+                                        }
+                                        CountUnsubscribeTotal++;
+                                    }
+                                    WriteLine("ID " + Campanha.id + " - Enviando e-mail para " + sfrom + " com objetivo " + Subject);
+                                    break;
+                                    #endregion
+                                }
+                                else if (Subject.IndexOf("add") >= 0)
                                 {
-                                    if (!CoreAssembly.IsRunningOnMono())
-                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
+                                    #region add
+                                    string Body = msgpart.GetBodyAsText();
+                                    string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
+                                    string[] emails = (from e in femails
+                                                       where !e.Contains(Campanha.SmtpServer)
+                                                       && !e.Contains("=")
+                                                       select e).ToArray();
 
-                                    db.Mala_Direta_add_Email(sfrom);
-                                    db.SubmitChanges();
+                                    pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+
+                                    foreach (string sfrom in emails)
+                                    {
+                                        try
+                                        {
+                                            AspMailList.library.Smtp smtp = new library.Smtp();
+                                            smtp.Subject = "Informações sobre a subscrição";
+                                            smtp.To = sfrom;
+                                            smtp.EnableSsl = Campanha.EnableSsl;
+                                            smtp.From = Campanha.SmtpUser;
+                                            smtp.Password = Campanha.SmtpPassword;
+                                            smtp.User = Campanha.SmtpUser;
+                                            smtp.Port = Campanha.SmtpPort.ToString();
+                                            smtp.SmtpServer = Campanha.SmtpServer;
+                                            smtp.DisplayName = Campanha.DisplayName;
+                                            smtp.Body = getHelpBodyUnsubscribeAndSubscribe(true);
+                                            smtp.EnviarEmail();
+                                        }
+                                        catch { }
+
+                                        CountSubscribeTotal++;
+                                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                        {
+                                            if (!CoreAssembly.IsRunningOnMono())
+                                                db.CommandTimeout = db.Connection.ConnectionTimeout;
+
+                                            db.Mala_Direta_add_Email(sfrom);
+                                            db.SubmitChanges();
+                                        }
+
+                                        WriteLine("ID " + Campanha.id + " - Adicionado o e-mail " + sfrom);
+                                    }
+                                    #endregion
                                 }
-
-                                WriteLine("ID " + Campanha.id + " - Adicionado o e-mail " + sfrom);
-                            }
-                            #endregion
-                        }
-                        else if (Subject.IndexOf("remove") >= 0)
-                        {
-                            #region remove
-                            string Body = msgpart.GetBodyAsText();
-                            string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
-                            string[] emails = (from e in femails
-                                               where !e.Contains(Campanha.SmtpServer)
-                                               && !e.Contains("=")
-                                               select e).ToArray();
-
-                            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
-                            {
-                                if (!CoreAssembly.IsRunningOnMono())
-                                    db.CommandTimeout = db.Connection.ConnectionTimeout;
-
-                                var optDelete = (from m in db.Mala_Diretas
-                                                 where emails.Contains(m.email)
-                                                 select m);
-
-                                foreach (var opt in optDelete)
+                                else if (Subject.IndexOf("remove") >= 0)
                                 {
-                                    var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
-                                                       where m.idMail == opt.id
-                                                       select m);
+                                    #region remove
+                                    string Body = msgpart.GetBodyAsText();
+                                    string[] femails = AspMailList.library.ValidEmail.getListMail(Body);
+                                    string[] emails = (from e in femails
+                                                       where !e.Contains(Campanha.SmtpServer)
+                                                       && !e.Contains("=")
+                                                       select e).ToArray();
 
-                                    db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
-                                    db.SubmitChanges();
+                                    using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                    {
+                                        if (!CoreAssembly.IsRunningOnMono())
+                                            db.CommandTimeout = db.Connection.ConnectionTimeout;
 
-                                    var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
-                                                              where m.idMail == opt.id
-                                                              select m);
+                                        var optDelete = (from m in db.Mala_Diretas
+                                                         where emails.Contains(m.email)
+                                                         select m);
 
-                                    db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
-                                    db.SubmitChanges();
+                                        foreach (var opt in optDelete)
+                                        {
+                                            var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                                               where m.idMail == opt.id
+                                                               select m);
+
+                                            db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
+                                            db.SubmitChanges();
+
+                                            var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                                                      where m.idMail == opt.id
+                                                                      select m);
+
+                                            db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
+                                            db.SubmitChanges();
+                                        }
+
+                                        db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
+                                        db.SubmitChanges();
+                                    }
+
+                                    WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
+                                    pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                                    #endregion
                                 }
+                                else if (Subject.IndexOf("count") >= 0 || Subject.IndexOf("info") >= 0)
+                                {
+                                    #region info
+                                    string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
 
-                                db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
-                                db.SubmitChanges();
+                                    AspMailList.library.Smtp smtp = new library.Smtp();
+                                    smtp.Subject = "Informações sobre a Lista";
+                                    smtp.To = sfrom;
+                                    smtp.EnableSsl = Campanha.EnableSsl;
+                                    smtp.From = Campanha.SmtpUser;
+                                    smtp.Password = Campanha.SmtpPassword;
+                                    smtp.User = Campanha.SmtpUser;
+                                    smtp.Port = Campanha.SmtpPort.ToString();
+                                    smtp.SmtpServer = Campanha.SmtpServer;
+                                    smtp.DisplayName = Campanha.DisplayName + " - Info";
+                                    smtp.Body = this.ToString().Replace(Environment.NewLine, "<br/>");
+                                    smtp.EnviarEmail();
+
+                                    pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                                    WriteLine("ID " + Campanha.id + " - Solicitou as informações para: " + sfrom);
+                                    #endregion
+                                }
+                                else if (Subject.IndexOf("command") >= 0)
+                                {
+                                    #region command
+                                    string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
+
+                                    AspMailList.library.Smtp smtp = new library.Smtp();
+                                    smtp.Subject = "Informações sobre os comando da Lista";
+                                    smtp.To = sfrom;
+                                    smtp.EnableSsl = Campanha.EnableSsl;
+                                    smtp.From = Campanha.SmtpUser;
+                                    smtp.Password = Campanha.SmtpPassword;
+                                    smtp.User = Campanha.SmtpUser;
+                                    smtp.Port = Campanha.SmtpPort.ToString();
+                                    smtp.SmtpServer = Campanha.SmtpServer;
+                                    smtp.DisplayName = Campanha.DisplayName + " - Command";
+                                    smtp.Body = getHelpBodyUnsubscribeAndSubscribe(true, true);
+                                    smtp.EnviarEmail();
+
+                                    pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                                    WriteLine("ID " + Campanha.id + " - Solicitou os comandos para: " + sfrom);
+
+                                    #endregion
+                                }
+                                else if (Subject.IndexOf("error") >= 0 || Subject.IndexOf("erros") >= 0)
+                                {
+                                    #region Erros
+                                    string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
+
+                                    AspMailList.library.Smtp smtp = new library.Smtp();
+                                    smtp.Subject = "Informações sobre os erros desta lista";
+                                    smtp.To = sfrom;
+                                    smtp.EnableSsl = Campanha.EnableSsl;
+                                    smtp.From = Campanha.SmtpUser;
+                                    smtp.Password = Campanha.SmtpPassword;
+                                    smtp.User = Campanha.SmtpUser;
+                                    smtp.Port = Campanha.SmtpPort.ToString();
+                                    smtp.SmtpServer = Campanha.SmtpServer;
+                                    smtp.DisplayName = Campanha.DisplayName + " - Info";
+                                    if (Subject.IndexOf("todos") >= 0 || Subject.IndexOf("all") >= 0)
+                                        smtp.Body = this.ErrosCampanhaTodos;
+                                    else
+                                        smtp.Body = this.ErrosCampanhaHoje;
+                                    smtp.EnviarEmail();
+
+                                    pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                                    WriteLine("ID " + Campanha.id + " - Solicitou as informações de erros para: " + sfrom);
+                                    #endregion
+                                }
+                                break;
                             }
-
-                            WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                            #endregion
-                        }
-                        else if (Subject.IndexOf("count") >= 0 || Subject.IndexOf("info") >= 0)
-                        {
-                            #region info
-                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
-
-                            AspMailList.library.Smtp smtp = new library.Smtp();
-                            smtp.Subject = "Informações sobre a Lista";
-                            smtp.To = sfrom;
-                            smtp.EnableSsl = Campanha.EnableSsl;
-                            smtp.From = Campanha.SmtpUser;
-                            smtp.Password = Campanha.SmtpPassword;
-                            smtp.User = Campanha.SmtpUser;
-                            smtp.Port = Campanha.SmtpPort.ToString();
-                            smtp.SmtpServer = Campanha.SmtpServer;
-                            smtp.DisplayName = Campanha.DisplayName + " - Info";
-                            smtp.Body = this.ToString().Replace(Environment.NewLine, "<br/>");
-                            smtp.EnviarEmail();
-
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                            WriteLine("ID " + Campanha.id + " - Solicitou as informações para: " + sfrom);
-                            #endregion
-                        }
-                        else if (Subject.IndexOf("command") >= 0)
-                        {
-                            #region command
-                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
-
-                            AspMailList.library.Smtp smtp = new library.Smtp();
-                            smtp.Subject = "Informações sobre os comando da Lista";
-                            smtp.To = sfrom;
-                            smtp.EnableSsl = Campanha.EnableSsl;
-                            smtp.From = Campanha.SmtpUser;
-                            smtp.Password = Campanha.SmtpPassword;
-                            smtp.User = Campanha.SmtpUser;
-                            smtp.Port = Campanha.SmtpPort.ToString();
-                            smtp.SmtpServer = Campanha.SmtpServer;
-                            smtp.DisplayName = Campanha.DisplayName + " - Command";
-                            smtp.Body = getHelpBodyUnsubscribeAndSubscribe(true, true);
-                            smtp.EnviarEmail();
-
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                            WriteLine("ID " + Campanha.id + " - Solicitou os comandos para: " + sfrom);
-
-                            #endregion
-                        }
-                        else if (Subject.IndexOf("error") >= 0 || Subject.IndexOf("erros") >= 0)
-                        {
-                            #region Erros
-                            string sfrom = msg.Headers.From.Address.ToString().ToLower().Trim();
-
-                            AspMailList.library.Smtp smtp = new library.Smtp();
-                            smtp.Subject = "Informações sobre os erros desta lista";
-                            smtp.To = sfrom;
-                            smtp.EnableSsl = Campanha.EnableSsl;
-                            smtp.From = Campanha.SmtpUser;
-                            smtp.Password = Campanha.SmtpPassword;
-                            smtp.User = Campanha.SmtpUser;
-                            smtp.Port = Campanha.SmtpPort.ToString();
-                            smtp.SmtpServer = Campanha.SmtpServer;
-                            smtp.DisplayName = Campanha.DisplayName + " - Info";
-                            if (Subject.IndexOf("todos") >= 0 || Subject.IndexOf("all") >= 0)
-                                smtp.Body = this.ErrosCampanhaTodos;
-                            else
-                                smtp.Body = this.ErrosCampanhaHoje;
-                            smtp.EnviarEmail();
-
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                            WriteLine("ID " + Campanha.id + " - Solicitou as informações de erros para: " + sfrom);
-                            #endregion
                         }
                     }
                 }
+                Thread.Sleep(5000);
             }
             catch (Exception ex)
             {
                 WriteLine("ID " + Campanha.id + " - Unsubscribe And Subscribe - Erros: " + ex.Message, ex);
                 CountSubscribeTotalErros++;
+                Thread.Sleep(TimeSleep);
             }
         }
         public string getHelpBody()
