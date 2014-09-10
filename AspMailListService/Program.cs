@@ -668,14 +668,17 @@ namespace AspMailList.Service
                                 }
                                 CountErroTotal++;
                                 WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
+                                break;
                             }
                         }
                         else
                         {
                             pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                            break;
                         }
                     }
                 }
+                Thread.Sleep(5000);
             }
             catch (Exception ex)
             {
@@ -1005,6 +1008,11 @@ namespace AspMailList.Service
                                 }
                                 break;
                             }
+                        }
+                        else
+                        {
+                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                            break;
                         }
                     }
                 }
