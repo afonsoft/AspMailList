@@ -505,6 +505,7 @@ namespace AspMailList.Service
                         }
                         else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required")
                                 || ex.Message.Contains("caractere inválido") || ex.Message.Contains("cabeçalho do email")
+                                || ex.Message.Contains("não está no formato") || ex.Message.Contains("A cadeia de caracteres")
                                 || ex.Message.Contains("inválido"))
                         {
                             smtpserver.Timeout = 5000; //5 Segundos para processar o proximo e-mail.
