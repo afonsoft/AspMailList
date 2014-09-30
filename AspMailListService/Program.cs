@@ -110,7 +110,7 @@ namespace AspMailList.Service
                         myThreadCampanha threadcamp = new myThreadCampanha(campanha, PathLog);
                         threadcamp.WriteLine("Iniciando a Campanha " + campanha.DisplayName);
                         ThreadCampanha.Add(threadcamp);
-                        
+
                         WriteLine("Iniciando a Campanha: " + threadcamp.Campanha.DisplayName + " - ID: " + threadcamp.Campanha.id);
                         Thread threadCampanhaHelp = new Thread(new ParameterizedThreadStart(ExecutarCampanhaHelps));
                         threadCampanhaHelp.IsBackground = true;
@@ -282,18 +282,19 @@ namespace AspMailList.Service
         /// <summary>
         /// Recuperar o log de erros.
         /// </summary>
-        public string ErrosCampanhaHoje {
+        public string ErrosCampanhaHoje
+        {
             get
             {
                 lock (lockObject)  // all other threads will wait for y
                 {
-                    using (var lockStreamReader = new StreamReader(Path.Combine(PathLog,  "log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
+                    using (var lockStreamReader = new StreamReader(Path.Combine(PathLog, "log-" + IdCampanha + "-" + DateTime.Now.ToString("yyyyMMdd") + ".txt"), true))
                     {
                         return lockStreamReader.ReadToEnd().Replace(Environment.NewLine, "<br/>" + Environment.NewLine);
                     }
                 }
             }
-        } 
+        }
         public string ErrosCampanhaTodos
         {
             get
@@ -369,7 +370,7 @@ namespace AspMailList.Service
                             select b).Count();
                 }
             }
-        } 
+        }
         public int TimeSleep { get; set; }
         public Mala_Direta_Campanha Campanha { get; set; }
         public List<SmtpMails> lstSmtpMails { get; set; }
@@ -389,12 +390,12 @@ namespace AspMailList.Service
 
             return item;
         }
-        public myThreadCampanha(Mala_Direta_Campanha campamha, string pathExecutableLog) 
-        { 
+        public myThreadCampanha(Mala_Direta_Campanha campamha, string pathExecutableLog)
+        {
             Campanha = campamha;
             PathLogExecutable = pathExecutableLog;
-            TimeSleep = 60000; 
-            pop = new AspMailList.library.Pop3(); 
+            TimeSleep = 60000;
+            pop = new AspMailList.library.Pop3();
             Debug = false;
 
             using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
@@ -503,6 +504,11 @@ namespace AspMailList.Service
                             smtpserver.Errocount++;
                             smtpserver.Timeout = 900000 * smtpserver.Errocount; //Esperar (15 * erros) minutos antes de enviar o proximo.
                         }
+                        else if (ex.Message.Contains("Falha ao enviar email") && ex.InnerException != null && ex.InnerException.Message.Contains("Impossível conectar-se"))
+                        {
+                            smtpserver.Errocount++;
+                            System.Threading.Thread.Sleep(60000 * smtpserver.Errocount);
+                        }
                         else if (ex.Message.Contains("correio não disponível") || ex.Message.Contains("A valid address is required")
                                 || ex.Message.Contains("caractere inválido") || ex.Message.Contains("cabeçalho do email")
                                 || ex.Message.Contains("não está no formato") || ex.Message.Contains("A cadeia de caracteres")
@@ -584,8 +590,9 @@ namespace AspMailList.Service
                         if (msg.Headers != null && !string.IsNullOrEmpty(msg.Headers.Subject))
                         {
                             if (msg.Headers.Subject.ToLower().Trim().IndexOf("mail delivery") >= 0
-                                || msg.Headers.Subject.ToLower().Trim().IndexOf("delivery delayed")>=0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("delivery delayed") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("undelivered mail") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("undelivered") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("returning message") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("failed") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("undelivered") >= 0
@@ -604,6 +611,8 @@ namespace AspMailList.Service
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("nao foi entregue") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("automática") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("automático") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("automatica") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("automatico") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("rejected") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("falha ao entregar") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("rejeitado") >= 0
@@ -613,6 +622,20 @@ namespace AspMailList.Service
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("non remis") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("falha") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("retried") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("recusada") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("status") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("ausencia") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("notification") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("falhou") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("unzustellbar") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("warning") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("antispam") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("invalido") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("anti-spam") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("entregar") >= 0
+                                || msg.Headers.Subject.ToLower().Trim().IndexOf("nao enviado") >= 0
                                 || msg.Headers.Subject.ToLower().Trim().IndexOf("not found") >= 0)
                             {
 
@@ -630,17 +653,24 @@ namespace AspMailList.Service
                                           && !e.Contains("=")
                                           select e).ToArray();
 
-                                pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
+                                bool excluir = true;
 
-                                if (msg.Headers.Subject.ToLower().Trim().IndexOf("automática") < 0
-                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("automático") < 0
-                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("spam") < 0
-                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("delivery status") < 0
-                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") < 0
-                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("automatic") < 0
-                                    && msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") < 0
-                                    && emails.Count() > 0)
+                                //Verificar se exclui ou não
+                                if (msg.Headers.Subject.ToLower().Trim().IndexOf("out of office") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("automatic") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("ausência") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("ausencia") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("automática") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("automático") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("automatica") >= 0
+                                    || msg.Headers.Subject.ToLower().Trim().IndexOf("automatico") >= 0)
+                                    excluir = false;
+
+                                if (excluir)
                                 {
+                                    CountErroTotal++;
+                                    WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
+
                                     using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
                                     {
                                         if (!CoreAssembly.IsRunningOnMono())
@@ -671,15 +701,8 @@ namespace AspMailList.Service
                                         db.SubmitChanges();
                                     }
                                 }
-                                CountErroTotal++;
-                                WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
-                                break;
+                                pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
                             }
-                        }
-                        else
-                        {
-                            pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
-                            break;
                         }
                     }
                 }
@@ -724,7 +747,7 @@ namespace AspMailList.Service
                     {
                         Message msg = client.GetMessage(i);
 
-                        if (msg.Headers!= null && !string.IsNullOrEmpty(msg.Headers.Subject) && msg.Headers.Subject.ToLower().Trim().IndexOf("help") >= 0)
+                        if (msg.Headers != null && !string.IsNullOrEmpty(msg.Headers.Subject) && msg.Headers.Subject.ToLower().Trim().IndexOf("help") >= 0)
                         {
                             string Subject = msg.Headers.Subject.ToLower().Trim();
                             string from = msg.Headers.From.Address.ToString().ToLower().Trim();
@@ -1076,7 +1099,8 @@ namespace AspMailList.Service
                 sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=info'>" + Campanha.SmtpUser + "?subject=info</a> Recupera as informações de Status.");
                 sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=add'>" + Campanha.SmtpUser + "?subject=add</a> Adiciona os email do corpo na lista.");
                 sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=remove'>" + Campanha.SmtpUser + "?subject=remove</a> Remova os email do corpo na lista.");
-                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=error'>" + Campanha.SmtpUser + "?subject=error</a> Informações sobre os erros ocorridos.");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=error'>" + Campanha.SmtpUser + "?subject=error</a> Informações sobre os erros ocorridos no dia.");
+                sb.AppendLine("<br>List-Subscribe: <a href='mailto:" + Campanha.SmtpUser + "?subject=error%20todos'>" + Campanha.SmtpUser + "?subject=erros todos</a> Informações sobre os erros ocorridos no serviço.");
             }
             sb.AppendLine("<br>");
             sb.AppendLine("<br>Obrigado.<br>");
