@@ -1,0 +1,327 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="2.0" xmlns:edmx="http://schemas.microsoft.com/ado/2008/10/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema Namespace="afonsoftcombr_dbModel.Store" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.1" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'afonsoftcombr_db.mala_direta' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="mala_direta">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="email" />
+            <PropertyRef Name="dtCadastro" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" />
+          <Property Name="email" Type="varchar" MaxLength="500" Nullable="false" />
+          <Property Name="dtCadastro" Type="datetime" Precision="0" Nullable="false" />
+          <Property Name="dtExclusao" Type="datetime" Precision="0" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'afonsoftcombr_db.mala_direta_campanha' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="mala_direta_campanha">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="DisplayName" />
+            <PropertyRef Name="ReplyTo" />
+            <PropertyRef Name="From" />
+            <PropertyRef Name="SmtpServer" />
+            <PropertyRef Name="EnableSsl" />
+            <PropertyRef Name="SmtpPort" />
+            <PropertyRef Name="PopPort" />
+            <PropertyRef Name="SmtpUser" />
+            <PropertyRef Name="SmtpPassword" />
+            <PropertyRef Name="Subject" />
+            <PropertyRef Name="BodyHtml" />
+            <PropertyRef Name="Enabled" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" />
+          <Property Name="DisplayName" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="ReplyTo" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="From" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="SmtpServer" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="EnableSsl" Type="bool" Nullable="false" />
+          <Property Name="SmtpPort" Type="int" Nullable="false" />
+          <Property Name="PopPort" Type="int" Nullable="false" />
+          <Property Name="SmtpUser" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="SmtpPassword" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="Subject" Type="varchar" MaxLength="200" Nullable="false" />
+          <Property Name="BodyHtml" Type="longtext" Nullable="false" />
+          <Property Name="AttachmentPath" Type="varchar" MaxLength="4000" />
+          <Property Name="Enabled" Type="bool" Nullable="false" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'afonsoftcombr_db.mala_direta_campanha_enviado' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="mala_direta_campanha_enviado">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="idMail" />
+            <PropertyRef Name="idCampanha" />
+            <PropertyRef Name="dtEnvio" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" />
+          <Property Name="idMail" Type="int" Nullable="false" />
+          <Property Name="idCampanha" Type="int" Nullable="false" />
+          <Property Name="dtEnvio" Type="datetime" Precision="0" Nullable="false" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'afonsoftcombr_db.mala_direta_campanha_smtp_mail' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="mala_direta_campanha_smtp_mail">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="idCamapnha" />
+            <PropertyRef Name="SmtpUser" />
+            <PropertyRef Name="SmtpPassword" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" />
+          <Property Name="idCamapnha" Type="int" Nullable="false" />
+          <Property Name="SmtpUser" Type="varchar" MaxLength="400" Nullable="false" />
+          <Property Name="SmtpPassword" Type="varchar" MaxLength="400" Nullable="false" />
+        </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'afonsoftcombr_db.mala_direta_campanha_unsubscribe' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="mala_direta_campanha_unsubscribe">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="idMail" />
+            <PropertyRef Name="idCampanha" />
+            <PropertyRef Name="dtUnsubscribe" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" />
+          <Property Name="idMail" Type="int" Nullable="false" />
+          <Property Name="idCampanha" Type="int" Nullable="false" />
+          <Property Name="dtUnsubscribe" Type="datetime" Precision="0" Nullable="false" />
+        </EntityType>
+        <EntityContainer Name="afonsoftcombr_dbModelStoreContainer">
+          <EntitySet Name="mala_direta" EntityType="Self.mala_direta" store:Type="Tables" store:Schema="afonsoftcombr_db">
+            <DefiningQuery>SELECT
+`mala_direta`.`id`, 
+`mala_direta`.`email`, 
+`mala_direta`.`dtCadastro`, 
+`mala_direta`.`dtExclusao`
+FROM `mala_direta` AS `mala_direta`</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="mala_direta_campanha" EntityType="Self.mala_direta_campanha" store:Type="Tables" store:Schema="afonsoftcombr_db">
+            <DefiningQuery>SELECT
+`mala_direta_campanha`.`id`, 
+`mala_direta_campanha`.`DisplayName`, 
+`mala_direta_campanha`.`ReplyTo`, 
+`mala_direta_campanha`.`From`, 
+`mala_direta_campanha`.`SmtpServer`, 
+`mala_direta_campanha`.`EnableSsl`, 
+`mala_direta_campanha`.`SmtpPort`, 
+`mala_direta_campanha`.`PopPort`, 
+`mala_direta_campanha`.`SmtpUser`, 
+`mala_direta_campanha`.`SmtpPassword`, 
+`mala_direta_campanha`.`Subject`, 
+`mala_direta_campanha`.`BodyHtml`, 
+`mala_direta_campanha`.`AttachmentPath`, 
+`mala_direta_campanha`.`Enabled`
+FROM `mala_direta_campanha` AS `mala_direta_campanha`</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="mala_direta_campanha_enviado" EntityType="Self.mala_direta_campanha_enviado" store:Type="Tables" store:Schema="afonsoftcombr_db">
+            <DefiningQuery>SELECT
+`mala_direta_campanha_enviado`.`id`, 
+`mala_direta_campanha_enviado`.`idMail`, 
+`mala_direta_campanha_enviado`.`idCampanha`, 
+`mala_direta_campanha_enviado`.`dtEnvio`
+FROM `mala_direta_campanha_enviado` AS `mala_direta_campanha_enviado`</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="mala_direta_campanha_smtp_mail" EntityType="Self.mala_direta_campanha_smtp_mail" store:Type="Tables" store:Schema="afonsoftcombr_db">
+            <DefiningQuery>SELECT
+`mala_direta_campanha_smtp_mail`.`id`, 
+`mala_direta_campanha_smtp_mail`.`idCamapnha`, 
+`mala_direta_campanha_smtp_mail`.`SmtpUser`, 
+`mala_direta_campanha_smtp_mail`.`SmtpPassword`
+FROM `mala_direta_campanha_smtp_mail` AS `mala_direta_campanha_smtp_mail`</DefiningQuery>
+          </EntitySet>
+          <EntitySet Name="mala_direta_campanha_unsubscribe" EntityType="Self.mala_direta_campanha_unsubscribe" store:Type="Tables" store:Schema="afonsoftcombr_db">
+            <DefiningQuery>SELECT
+`mala_direta_campanha_unsubscribe`.`id`, 
+`mala_direta_campanha_unsubscribe`.`idMail`, 
+`mala_direta_campanha_unsubscribe`.`idCampanha`, 
+`mala_direta_campanha_unsubscribe`.`dtUnsubscribe`
+FROM `mala_direta_campanha_unsubscribe` AS `mala_direta_campanha_unsubscribe`</DefiningQuery>
+          </EntitySet>
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="afonsoftcombr_dbModel" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+        <EntityType Name="mala_direta">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="email" />
+            <PropertyRef Name="dtCadastro" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" />
+          <Property Name="email" Type="String" MaxLength="500" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="dtCadastro" Type="DateTime" Nullable="false" />
+          <Property Name="dtExclusao" Type="DateTime" />
+        </EntityType>
+        <EntityType Name="mala_direta_campanha">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="DisplayName" />
+            <PropertyRef Name="ReplyTo" />
+            <PropertyRef Name="From" />
+            <PropertyRef Name="SmtpServer" />
+            <PropertyRef Name="EnableSsl" />
+            <PropertyRef Name="SmtpPort" />
+            <PropertyRef Name="PopPort" />
+            <PropertyRef Name="SmtpUser" />
+            <PropertyRef Name="SmtpPassword" />
+            <PropertyRef Name="Subject" />
+            <PropertyRef Name="BodyHtml" />
+            <PropertyRef Name="Enabled" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" />
+          <Property Name="DisplayName" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="ReplyTo" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="From" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="SmtpServer" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="EnableSsl" Type="Boolean" Nullable="false" />
+          <Property Name="SmtpPort" Type="Int32" Nullable="false" />
+          <Property Name="PopPort" Type="Int32" Nullable="false" />
+          <Property Name="SmtpUser" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="SmtpPassword" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="Subject" Type="String" MaxLength="200" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="BodyHtml" Type="String" MaxLength="1073741823" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="AttachmentPath" Type="String" MaxLength="4000" FixedLength="false" Unicode="false" />
+          <Property Name="Enabled" Type="Boolean" Nullable="false" />
+        </EntityType>
+        <EntityType Name="mala_direta_campanha_enviado">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="idMail" />
+            <PropertyRef Name="idCampanha" />
+            <PropertyRef Name="dtEnvio" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" />
+          <Property Name="idMail" Type="Int32" Nullable="false" />
+          <Property Name="idCampanha" Type="Int32" Nullable="false" />
+          <Property Name="dtEnvio" Type="DateTime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="mala_direta_campanha_smtp_mail">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="idCamapnha" />
+            <PropertyRef Name="SmtpUser" />
+            <PropertyRef Name="SmtpPassword" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" />
+          <Property Name="idCamapnha" Type="Int32" Nullable="false" />
+          <Property Name="SmtpUser" Type="String" MaxLength="400" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="SmtpPassword" Type="String" MaxLength="400" FixedLength="false" Unicode="false" Nullable="false" />
+        </EntityType>
+        <EntityType Name="mala_direta_campanha_unsubscribe">
+          <Key>
+            <PropertyRef Name="id" />
+            <PropertyRef Name="idMail" />
+            <PropertyRef Name="idCampanha" />
+            <PropertyRef Name="dtUnsubscribe" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" />
+          <Property Name="idMail" Type="Int32" Nullable="false" />
+          <Property Name="idCampanha" Type="Int32" Nullable="false" />
+          <Property Name="dtUnsubscribe" Type="DateTime" Nullable="false" />
+        </EntityType>
+        <EntityContainer Name="afonsoftcombr_dbEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="mala_direta" EntityType="Self.mala_direta" />
+          <EntitySet Name="mala_direta_campanha" EntityType="Self.mala_direta_campanha" />
+          <EntitySet Name="mala_direta_campanha_enviado" EntityType="Self.mala_direta_campanha_enviado" />
+          <EntitySet Name="mala_direta_campanha_smtp_mail" EntityType="Self.mala_direta_campanha_smtp_mail" />
+          <EntitySet Name="mala_direta_campanha_unsubscribe" EntityType="Self.mala_direta_campanha_unsubscribe" />
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2008/09/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="afonsoftcombr_dbModelStoreContainer" CdmEntityContainer="afonsoftcombr_dbEntities">
+          <EntitySetMapping Name="mala_direta">
+            <EntityTypeMapping TypeName="afonsoftcombr_dbModel.mala_direta">
+              <MappingFragment StoreEntitySet="mala_direta">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="email" ColumnName="email" />
+                <ScalarProperty Name="dtCadastro" ColumnName="dtCadastro" />
+                <ScalarProperty Name="dtExclusao" ColumnName="dtExclusao" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="mala_direta_campanha">
+            <EntityTypeMapping TypeName="afonsoftcombr_dbModel.mala_direta_campanha">
+              <MappingFragment StoreEntitySet="mala_direta_campanha">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="DisplayName" ColumnName="DisplayName" />
+                <ScalarProperty Name="ReplyTo" ColumnName="ReplyTo" />
+                <ScalarProperty Name="From" ColumnName="From" />
+                <ScalarProperty Name="SmtpServer" ColumnName="SmtpServer" />
+                <ScalarProperty Name="EnableSsl" ColumnName="EnableSsl" />
+                <ScalarProperty Name="SmtpPort" ColumnName="SmtpPort" />
+                <ScalarProperty Name="PopPort" ColumnName="PopPort" />
+                <ScalarProperty Name="SmtpUser" ColumnName="SmtpUser" />
+                <ScalarProperty Name="SmtpPassword" ColumnName="SmtpPassword" />
+                <ScalarProperty Name="Subject" ColumnName="Subject" />
+                <ScalarProperty Name="BodyHtml" ColumnName="BodyHtml" />
+                <ScalarProperty Name="AttachmentPath" ColumnName="AttachmentPath" />
+                <ScalarProperty Name="Enabled" ColumnName="Enabled" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="mala_direta_campanha_enviado">
+            <EntityTypeMapping TypeName="afonsoftcombr_dbModel.mala_direta_campanha_enviado">
+              <MappingFragment StoreEntitySet="mala_direta_campanha_enviado">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="idMail" ColumnName="idMail" />
+                <ScalarProperty Name="idCampanha" ColumnName="idCampanha" />
+                <ScalarProperty Name="dtEnvio" ColumnName="dtEnvio" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="mala_direta_campanha_smtp_mail">
+            <EntityTypeMapping TypeName="afonsoftcombr_dbModel.mala_direta_campanha_smtp_mail">
+              <MappingFragment StoreEntitySet="mala_direta_campanha_smtp_mail">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="idCamapnha" ColumnName="idCamapnha" />
+                <ScalarProperty Name="SmtpUser" ColumnName="SmtpUser" />
+                <ScalarProperty Name="SmtpPassword" ColumnName="SmtpPassword" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="mala_direta_campanha_unsubscribe">
+            <EntityTypeMapping TypeName="afonsoftcombr_dbModel.mala_direta_campanha_unsubscribe">
+              <MappingFragment StoreEntitySet="mala_direta_campanha_unsubscribe">
+                <ScalarProperty Name="id" ColumnName="id" />
+                <ScalarProperty Name="idMail" ColumnName="idMail" />
+                <ScalarProperty Name="idCampanha" ColumnName="idCampanha" />
+                <ScalarProperty Name="dtUnsubscribe" ColumnName="dtUnsubscribe" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2008/10/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

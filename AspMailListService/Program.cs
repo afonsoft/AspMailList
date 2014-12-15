@@ -95,9 +95,9 @@ namespace AspMailList.Service
                 WriteLine("Pressine I para Informações. (Press I for information)");
                 AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
                 WriteLine("Recuperando a lista de Campanhas.");
-                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                 {
-                    var listCampanha = (from c in db.Mala_Direta_Campanhas
+                    var listCampanha = (from c in db.mala_direta_campanha
                                         where c.Enabled == true
                                         select c).ToList();
 
@@ -362,17 +362,16 @@ namespace AspMailList.Service
         {
             get
             {
-                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                 {
-                    db.DeferredLoadingEnabled = false;
-                    return (from b in db.Mala_Direta_Campanha_Enviados
+                    return (from b in db.mala_direta_campanha_enviado
                             where b.idCampanha == Campanha.id
                             select b).Count();
                 }
             }
         }
         public int TimeSleep { get; set; }
-        public Mala_Direta_Campanha Campanha { get; set; }
+        public mala_direta_campanha Campanha { get; set; }
         public List<SmtpMails> lstSmtpMails { get; set; }
         private SmtpMails getDisponivel()
         {
@@ -390,7 +389,7 @@ namespace AspMailList.Service
 
             return item;
         }
-        public myThreadCampanha(Mala_Direta_Campanha campamha, string pathExecutableLog)
+        public myThreadCampanha(mala_direta_campanha campamha, string pathExecutableLog)
         {
             Campanha = campamha;
             PathLogExecutable = pathExecutableLog;
@@ -398,9 +397,9 @@ namespace AspMailList.Service
             pop = new AspMailList.library.Pop3();
             Debug = false;
 
-            using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+            using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
             {
-                lstSmtpMails = (from s in db.Mala_Direta_Campanha_Smtp_Mails
+                lstSmtpMails = (from s in db.mala_direta_campanha_smtp_mail
                                 where s.idCamapnha == campamha.id
                                 select new SmtpMails
                                 {
@@ -431,11 +430,8 @@ namespace AspMailList.Service
                 int totalEnvio = 0;
 
                 List<Sp_camanha_email_nao_enviadoResult> Emails = new List<Sp_camanha_email_nao_enviadoResult>();
-                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                 {
-                    db.ObjectTrackingEnabled = false;
-                    if (!CoreAssembly.IsRunningOnMono())
-                        db.CommandTimeout = db.Connection.ConnectionTimeout;
                     //LER DE 2000 EM 2000 E-MAILS
                     Emails = db.Sp_camanha_email_nao_enviado(Campanha.id).ToList();
                 }
@@ -471,17 +467,15 @@ namespace AspMailList.Service
                             WriteLine("ID " + Campanha.id + " - Enviados: " + totalEnvio + " de " + Emails.Count + " - Email enviado: " + mail.To);
 
                         System.Threading.Thread.Sleep(500);
-                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                        using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                         {
-                            if (!CoreAssembly.IsRunningOnMono())
-                                db.CommandTimeout = db.Connection.ConnectionTimeout;
 
-                            Mala_Direta_Campanha_Enviado menivado = new Mala_Direta_Campanha_Enviado();
+                            mala_direta_campanha_enviado menivado = new mala_direta_campanha_enviado();
                             menivado.dtEnvio = DateTime.Now;
                             menivado.idCampanha = Campanha.id;
                             menivado.idMail = md.id;
-                            db.Mala_Direta_Campanha_Enviados.InsertOnSubmit(menivado);
-                            db.SubmitChanges();
+                            db.mala_direta_campanha_enviado.Add(menivado);
+                            db.SaveChanges();
                         }
                         CountEnvioSucesso++;
                         smtpserver.isEror = false;
@@ -519,34 +513,31 @@ namespace AspMailList.Service
                             WriteLine("ID " + Campanha.id + " - Removido o e-mail " + md.email + " Erro: " + ex.Message);
                             try
                             {
-                                using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                                 {
-                                    if (!CoreAssembly.IsRunningOnMono())
-                                        db.CommandTimeout = db.Connection.ConnectionTimeout;
-
-                                    var optDelete = (from m in db.Mala_Diretas
+                                    var optDelete = (from m in db.mala_direta
                                                      where m.email == md.email
                                                      select m);
 
                                     foreach (var opt in optDelete)
                                     {
-                                        var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                        var optdelEnvio = (from m in db.mala_direta_campanha_enviado
                                                            where m.idMail == opt.id
-                                                           select m);
+                                                           select m).FirstOrDefault();
 
-                                        db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
-                                        db.SubmitChanges();
+                                        db.mala_direta_campanha_enviado.Remove(optdelEnvio);
+                                        db.SaveChanges();
 
-                                        var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                        var optdelUnsubscribes = (from m in db.mala_direta_campanha_unsubscribe
                                                                   where m.idMail == opt.id
-                                                                  select m);
+                                                                  select m).FirstOrDefault();
 
-                                        db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
-                                        db.SubmitChanges();
+                                        db.mala_direta_campanha_unsubscribe.Remove(optdelUnsubscribes);
+                                        db.SaveChanges();
+
+                                        db.mala_direta.Remove(opt);
+                                        db.SaveChanges();
                                     }
-
-                                    db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
-                                    db.SubmitChanges();
                                 }
                             }
                             catch (Exception)
@@ -671,34 +662,32 @@ namespace AspMailList.Service
                                     CountErroTotal++;
                                     WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
 
-                                    using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                    using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                                     {
-                                        if (!CoreAssembly.IsRunningOnMono())
-                                            db.CommandTimeout = db.Connection.ConnectionTimeout;
 
-                                        var optDelete = (from m in db.Mala_Diretas
+                                        var optDelete = (from m in db.mala_direta
                                                          where emails.Contains(m.email)
                                                          select m);
 
                                         foreach (var opt in optDelete)
                                         {
-                                            var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                            var optdelEnvio = (from m in db.mala_direta_campanha_enviado
                                                                where m.idMail == opt.id
-                                                               select m);
+                                                               select m).FirstOrDefault();
 
-                                            db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
-                                            db.SubmitChanges();
+                                            db.mala_direta_campanha_enviado.Remove(optdelEnvio);
+                                            db.SaveChanges();
 
-                                            var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                            var optdelUnsubscribes = (from m in db.mala_direta_campanha_unsubscribe
                                                                       where m.idMail == opt.id
-                                                                      select m);
+                                                                      select m).FirstOrDefault();
 
-                                            db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
-                                            db.SubmitChanges();
+                                            db.mala_direta_campanha_unsubscribe.Remove(optdelUnsubscribes);
+                                            db.SaveChanges();
+
+                                            db.mala_direta.Remove(opt);
+                                            db.SaveChanges();
                                         }
-
-                                        db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
-                                        db.SubmitChanges();
                                     }
                                 }
                                 pop.DeleteMessageByMessageId(client, msg.Headers.MessageId);
@@ -839,34 +828,29 @@ namespace AspMailList.Service
                                     if (subscribe)
                                     {
                                         CountSubscribeTotal++;
-                                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                        using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                                         {
-                                            if (!CoreAssembly.IsRunningOnMono())
-                                                db.CommandTimeout = db.Connection.ConnectionTimeout;
 
                                             db.Mala_Direta_add_Email(sfrom);
-                                            db.SubmitChanges();
+                                            db.SaveChanges();
                                         }
                                     }
                                     else
                                     {
-                                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                        using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                                         {
-                                            if (!CoreAssembly.IsRunningOnMono())
-                                                db.CommandTimeout = db.Connection.ConnectionTimeout;
-
-                                            var optdelete = (from m in db.Mala_Diretas
+                                            var optdelete = (from m in db.mala_direta
                                                              where m.email == sfrom
                                                              select m);
 
                                             foreach (var opt in optdelete)
                                             {
-                                                Mala_Direta_Campanha_Unsubscribe m = new Mala_Direta_Campanha_Unsubscribe();
+                                                mala_direta_campanha_unsubscribe m = new mala_direta_campanha_unsubscribe();
                                                 m.dtUnsubscribe = DateTime.Now;
                                                 m.idCampanha = Campanha.id;
                                                 m.idMail = opt.id;
-                                                db.Mala_Direta_Campanha_Unsubscribes.InsertOnSubmit(m);
-                                                db.SubmitChanges();
+                                                db.mala_direta_campanha_unsubscribe.Add(m);
+                                                db.SaveChanges();
                                             }
                                         }
                                         CountUnsubscribeTotal++;
@@ -907,13 +891,10 @@ namespace AspMailList.Service
                                         catch { }
 
                                         CountSubscribeTotal++;
-                                        using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                        using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                                         {
-                                            if (!CoreAssembly.IsRunningOnMono())
-                                                db.CommandTimeout = db.Connection.ConnectionTimeout;
-
                                             db.Mala_Direta_add_Email(sfrom);
-                                            db.SubmitChanges();
+                                            db.SaveChanges();
                                         }
 
                                         WriteLine("ID " + Campanha.id + " - Adicionado o e-mail " + sfrom);
@@ -930,34 +911,32 @@ namespace AspMailList.Service
                                                        && !e.Contains("=")
                                                        select e).ToArray();
 
-                                    using (dbMalaDiretaDataContext db = new dbMalaDiretaDataContext())
+                                    using (afonsoftcombr_dbEntities db = new afonsoftcombr_dbEntities())
                                     {
-                                        if (!CoreAssembly.IsRunningOnMono())
-                                            db.CommandTimeout = db.Connection.ConnectionTimeout;
 
-                                        var optDelete = (from m in db.Mala_Diretas
+                                        var optDelete = (from m in db.mala_direta
                                                          where emails.Contains(m.email)
                                                          select m);
 
                                         foreach (var opt in optDelete)
                                         {
-                                            var optdelEnvio = (from m in db.Mala_Direta_Campanha_Enviados
+                                            var optdelEnvio = (from m in db.mala_direta_campanha_enviado
                                                                where m.idMail == opt.id
-                                                               select m);
+                                                               select m).FirstOrDefault();
 
-                                            db.Mala_Direta_Campanha_Enviados.DeleteAllOnSubmit(optdelEnvio);
-                                            db.SubmitChanges();
+                                            db.mala_direta_campanha_enviado.Remove(optdelEnvio);
+                                            db.SaveChanges();
 
-                                            var optdelUnsubscribes = (from m in db.Mala_Direta_Campanha_Unsubscribes
+                                            var optdelUnsubscribes = (from m in db.mala_direta_campanha_unsubscribe
                                                                       where m.idMail == opt.id
-                                                                      select m);
+                                                                      select m).FirstOrDefault();
 
-                                            db.Mala_Direta_Campanha_Unsubscribes.DeleteAllOnSubmit(optdelUnsubscribes);
-                                            db.SubmitChanges();
+                                            db.mala_direta_campanha_unsubscribe.Remove(optdelUnsubscribes);
+                                            db.SaveChanges();
+
+                                            db.mala_direta.Remove(opt);
+                                            db.SaveChanges();
                                         }
-
-                                        db.Mala_Diretas.DeleteAllOnSubmit(optDelete);
-                                        db.SubmitChanges();
                                     }
 
                                     WriteLine("ID " + Campanha.id + " - Removido o e-mail " + string.Join(";", emails));
@@ -1130,5 +1109,5 @@ namespace AspMailList.Service
             sb.AppendLine("");
             return sb.ToString();
         }
-    }
+   }
 }
