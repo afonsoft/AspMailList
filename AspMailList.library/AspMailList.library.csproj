@@ -56,7 +56,6 @@
     <Compile Include="ValidEmail.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="Referencias\OpenPop.dll" />
   </ItemGroup>
   <ItemGroup>
