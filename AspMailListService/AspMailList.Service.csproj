@@ -39,12 +39,19 @@
     <StartupObject>AspMailList.Service.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.5.0.0\lib\net40\EntityFramework.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.CSharp">
       <HintPath>..\packages\Mono.CSharp.3.4.0\lib\net40\Mono.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -55,13 +62,35 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="dbMalaDireta.cs">
-      <DependentUpon>dbMalaDireta.dbml</DependentUpon>
-    </Compile>
-    <Compile Include="dbMalaDireta.designer.cs">
+    <Compile Include="dbMalaDireta.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>dbMalaDireta.dbml</DependentUpon>
+      <DependentUpon>dbMalaDireta.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="dbMalaDireta.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>dbMalaDireta.tt</DependentUpon>
+    </Compile>
+    <Compile Include="dbMalaDireta.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>dbMalaDireta.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="mala_direta.cs">
+      <DependentUpon>dbMalaDireta.tt</DependentUpon>
+    </Compile>
+    <Compile Include="mala_direta_campanha.cs">
+      <DependentUpon>dbMalaDireta.tt</DependentUpon>
+    </Compile>
+    <Compile Include="mala_direta_campanha_enviado.cs">
+      <DependentUpon>dbMalaDireta.tt</DependentUpon>
+    </Compile>
+    <Compile Include="mala_direta_campanha_smtp_mail.cs">
+      <DependentUpon>dbMalaDireta.tt</DependentUpon>
+    </Compile>
+    <Compile Include="mala_direta_campanha_unsubscribe.cs">
+      <DependentUpon>dbMalaDireta.tt</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -82,13 +111,22 @@
     <None Include="AspMailListService.sh">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="dbMalaDireta.dbml">
-      <Generator>MSLinqToSQLGenerator</Generator>
-      <LastGenOutput>dbMalaDireta.designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
+    <EntityDeploy Include="dbMalaDireta.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>dbMalaDireta.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="dbMalaDireta.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>dbMalaDireta.edmx</DependentUpon>
+      <LastGenOutput>dbMalaDireta.Context.cs</LastGenOutput>
     </None>
-    <None Include="dbMalaDireta.dbml.views">
-      <DependentUpon>dbMalaDireta.dbml</DependentUpon>
+    <None Include="dbMalaDireta.edmx.diagram">
+      <DependentUpon>dbMalaDireta.edmx</DependentUpon>
+    </None>
+    <None Include="dbMalaDireta.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>dbMalaDireta.edmx</DependentUpon>
+      <LastGenOutput>dbMalaDireta.cs</LastGenOutput>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -98,11 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="dbMalaDireta.dbml.layout">
-      <DependentUpon>dbMalaDireta.dbml</DependentUpon>
-    </None>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
